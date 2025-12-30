@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JitWord - 离线模式演示（完整功能体验）</title>
+  
+  <!-- SDK 样式 -->
+  <link rel="stylesheet" href="../cdn/arco.css">
+  <link rel="stylesheet" href="../cdn/px-editor.css">
+
+  <!-- 依赖库 -->
+  <script src="../cdn/vue.global.prod.js"></script>
+  <script src="../cdn/arco-vue.min.js"></script>
+  <script src="../cdn/arco-vue-icon.min.js"></script>
+  <script src="../cdn/echarts.min.js"></script>
+  <!-- 使用 4.0.0 版本的 MindElixir（与主编辑器版本一致） -->
+  <script src="../cdn/mind-elixir-4.0.0.iife.js"></script>
+  
+  <!-- JitWord SDK -->
+  <script src="../cdn/px-editor.standalone.js?v=1735392100"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      background: #f5f5f5;
+    }
+    #app { 
+      width: 100%; 
+      height: 100vh; 
+      display: flex; 
+      flex-direction: column;
+    }
+    /* API 演示面板 */
+    .api-demo-panel {
+      background: linear-gradient(135deg, #0c4ccd 0%, #0569af 100%);
+      color: white;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+    }
+    .panel-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .panel-icon {
+      font-size: 24px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    .panel-text strong { 
+      font-weight: 600; 
+      font-size: 16px;
+    }
+    .panel-text small {
+      display: block;
+      opacity: 0.9;
+      font-size: 12px;
+      margin-top: 2px;
+    }
+    .panel-right {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .api-btn {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .api-btn:hover {
+      background: rgba(255,255,255,0.3);
+      border-color: rgba(255,255,255,0.4);
+    }
+    .api-btn:active {
+      transform: scale(0.95);
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- API 演示面板：展示 SDK API 能力 -->
+    <div class="api-demo-panel">
+      <div class="panel-left">
+        <div class="panel-icon">[SDK]</div>
+        <div class="panel-text">
+          <strong>离线模式演示</strong>
+          <small>混合模式：文档管理 API + 其他内置功能体验</small>
+        </div>
+      </div>
+      <div class="panel-right">
+        <button class="api-btn" onclick="listDocuments()">文档列表</button>
+        <button class="api-btn" onclick="createNewDocument()">创建文档</button>
+        <button class="api-btn" onclick="setDocumentContent()">设置内容</button>
+        <button class="api-btn" onclick="loadEmptyDocument()">加载空文档</button>
+        <button class="api-btn" onclick="getDocumentContent()">获取内容</button>
+        <button class="api-btn" onclick="exportData()">导出数据</button>
+        <button class="api-btn" onclick="showStats()">存储统计</button>
+        <button class="api-btn" onclick="clearData()">清空数据</button>
+      </div>
+    </div>
+    <div id="col-editor"></div>
+  </div>
+
+  <script>
+    
+    /**
+     * JitWord SDK - 混合模式演示（内置 UI + API 调用）
+     * 
+     * 设计目标：
+     * 1. 良好的用户体验 - 使用内置 UI（文档列表、创建按钮、版本管理）
+     * 2. 展示 API 能力 - 顶部面板提供 API 调用示例
+     * 3. 灵活配置 - 用户可自由开启/关闭功能
+     * 
+     * 关键特性：
+     * - offlineMode: true                  // 离线模式（IndexedDB）
+     * - useBuiltinModals: true             // 使用内置 UI（良好的体验）
+     * - enableDocumentList: true           // 内置文档列表
+     * - enableCollaboration: false         // 默认关闭协同（离线模式）
+     * - enableAutoSave: true               // 自动保存
+     * - defaultValue: { ... }              // 空文档时的默认内容
+     * 
+     * API 调用示例（顶部按钮展示）：
+     * - setDocumentContent()    // 设置文档内容
+     * - loadEmptyDocument()      // 加载空文档（默认内容生效）
+     * - toggleCollaboration()    // 切换协同状态
+     * - exportData()             // 导出所有数据
+     * - showStats()              // 查看存储统计
+     */
+
+    window.onload = function() {
+      if (!window.PxEditor) {
+        alert('SDK 加载失败，请检查文件路径');
+        return;
+      }
+      
+      const { Jitword, Message, JitWordSDK } = window.PxEditor;
+
+      // Generate or retrieve document ID
+      const getDocId = () => {
+        const params = new URLSearchParams(window.location.search);
+        let docId = params.get('docId');
+        if (!docId) {
+          docId = 'offline-doc-' + Date.now();
+          // Update URL without reload
+          const newUrl = window.location.pathname + '?docId=' + docId;
+          window.history.replaceState({}, '', newUrl);
+        }
+        return docId;
+      };
+      
+      const currentDocId = getDocId();
+      
+      // ===== 初始化编辑器（离线模式）=====
+      // 💡 配置说明：
+      // - 大部分配置项默认已启用（useBuiltinModals, enableAI, showRightToolbar 等）
+      // - 仅列出必需配置和非默认值，让配置更简洁明了
+      // - 完整配置说明请查看：packages/collab-editor/README.md
+      
+      const editor = new Jitword({
+        // ===== 必需配置 =====
+        hold: "col-editor",
+        currentDocumentId: currentDocId,  // 必需：即使在离线模式下也需要文档 ID
+        
+        // ===== 离线模式核心配置 =====
+        offlineMode: true,
+        offlineStorageKey: 'jitword_offline_demo',
+        enableCollaboration: false,       // ⚠️ 离线模式必须关闭协同
+        
+        // ===== 应用信息 =====
+        appTitle: 'JitWord 离线演示',
+        appTitleShort: 'JitWord',
+        documentTitle: '离线文档示例',
+        locale: 'zh',
+        placeholder: '开始输入内容...',
+        theme: 'light',
+        
+        // ===== 默认内容配置 =====
+        // 💡 新建文档时使用的默认内容模板，展示编辑器功能
+        defaultValue: {
+          type: 'doc',
+          content: [
+            {
+              type: 'heading',
+              attrs: { level: 1 },
+              content: [{ type: 'text', text: '新建文档' }]
+            },
+            {
+              type: 'paragraph',
+              content: [{ 
+                type: 'text', 
+                text: '欢迎使用 JitWord 离线编辑器！这是一个功能丰富的文档编辑器示例。'
+              }]
+            },
+            {
+              type: 'heading',
+              attrs: { level: 2 },
+              content: [{ type: 'text', text: '📋 文本格式化' }]
+            },
+            {
+              type: 'paragraph',
+              content: [
+                { type: 'text', text: '支持 ' },
+                { type: 'text', text: '粗体', marks: [{ type: 'bold' }] },
+                { type: 'text', text: '、' },
+                { type: 'text', text: '斜体', marks: [{ type: 'italic' }] },
+                { type: 'text', text: '、' },
+                { type: 'text', text: '下划线', marks: [{ type: 'underline' }] },
+                { type: 'text', text: '、' },
+                { type: 'text', text: '删除线', marks: [{ type: 'strike' }] },
+                { type: 'text', text: '、' },
+                { type: 'text', text: '代码', marks: [{ type: 'code' }] },
+                { type: 'text', text: ' 等样式。' }
+              ]
+            },
+            {
+              type: 'heading',
+              attrs: { level: 2 },
+              content: [{ type: 'text', text: '📝 列表功能' }]
+            },
+            {
+              type: 'bulletList',
+              content: [
+                {
+                  type: 'listItem',
+                  content: [{
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: '无序列表项 1' }]
+                  }]
+                },
+                {
+                  type: 'listItem',
+                  content: [{
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: '无序列表项 2' }]
+                  }]
+                },
+                {
+                  type: 'listItem',
+                  content: [
+                    {
+                      type: 'paragraph',
+                      content: [{ type: 'text', text: '无序列表项 3 （嵌套）' }]
+                    },
+                    {
+                      type: 'bulletList',
+                      content: [
+                        {
+                          type: 'listItem',
+                          content: [{
+                            type: 'paragraph',
+                            content: [{ type: 'text', text: '子项 1' }]
+                          }]
+                        },
+                        {
+                          type: 'listItem',
+                          content: [{
+                            type: 'paragraph',
+                            content: [{ type: 'text', text: '子项 2' }]
+                          }]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              type: 'orderedList',
+              attrs: { start: 1 },
+              content: [
+                {
+                  type: 'listItem',
+                  content: [{
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: '有序列表项 1' }]
+                  }]
+                },
+                {
+                  type: 'listItem',
+                  content: [{
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: '有序列表项 2' }]
+                  }]
+                },
+                {
+                  type: 'listItem',
+                  content: [{
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: '有序列表项 3' }]
+                  }]
+                }
+              ]
+            },
+            {
+              type: 'taskList',
+              content: [
+                {
+                  type: 'taskItem',
+                  attrs: { checked: true },
+                  content: [{
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: '已完成的任务' }]
+                  }]
+                },
+                {
+                  type: 'taskItem',
+                  attrs: { checked: false },
+                  content: [{
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: '待完成的任务' }]
+                  }]
+                }
+              ]
+            },
+            {
+              type: 'heading',
+              attrs: { level: 2 },
+              content: [{ type: 'text', text: '💬 引用与代码块' }]
+            },
+            {
+              type: 'blockquote',
+              content: [{
+                type: 'paragraph',
+                content: [{ type: 'text', text: '这是一段引用文字，用于引用重要内容或他人的观点。' }]
+              }]
+            },
+            {
+              type: 'codeBlock',
+              attrs: { language: 'javascript' },
+              content: [{
+                type: 'text',
+                text: 'const editor = new Jitword({\n  offlineMode: true,\n  defaultValue: { ... }\n});'
+              }]
+            },
+            {
+              type: 'heading',
+              attrs: { level: 2 },
+              content: [{ type: 'text', text: '📊 表格示例' }]
+            },
+            {
+              type: 'table',
+              content: [
+                {
+                  type: 'tableRow',
+                  content: [
+                    {
+                      type: 'tableHeader',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{ type: 'text', text: '功能' }]
+                      }]
+                    },
+                    {
+                      type: 'tableHeader',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{ type: 'text', text: '状态' }]
+                      }]
+                    },
+                    {
+                      type: 'tableHeader',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{ type: 'text', text: '说明' }]
+                      }]
+                    }
+                  ]
+                },
+                {
+                  type: 'tableRow',
+                  content: [
+                    {
+                      type: 'tableCell',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{ type: 'text', text: '离线存储' }]
+                      }]
+                    },
+                    {
+                      type: 'tableCell',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{ type: 'text', text: '✅ 已启用' }]
+                      }]
+                    },
+                    {
+                      type: 'tableCell',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{ type: 'text', text: '使用 IndexedDB' }]
+                      }]
+                    }
+                  ]
+                },
+                {
+                  type: 'tableRow',
+                  content: [
+                    {
+                      type: 'tableCell',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{ type: 'text', text: '文件上传' }]
+                      }]
+                    },
+                    {
+                      type: 'tableCell',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{ type: 'text', text: '✅ 已启用' }]
+                      }]
+                    },
+                    {
+                      type: 'tableCell',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{ type: 'text', text: 'Base64 存储' }]
+                      }]
+                    }
+                  ]
+                },
+                {
+                  type: 'tableRow',
+                  content: [
+                    {
+                      type: 'tableCell',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{ type: 'text', text: '自动保存' }]
+                      }]
+                    },
+                    {
+                      type: 'tableCell',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{ type: 'text', text: '✅ 已启用' }]
+                      }]
+                    },
+                    {
+                      type: 'tableCell',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{ type: 'text', text: '2秒防抖' }]
+                      }]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              type: 'heading',
+              attrs: { level: 2 },
+              content: [{ type: 'text', text: '✨ 快捷键提示' }]
+            },
+            {
+              type: 'bulletList',
+              content: [
+                {
+                  type: 'listItem',
+                  content: [{
+                    type: 'paragraph',
+                    content: [
+                      { type: 'text', text: 'Ctrl/Cmd + S', marks: [{ type: 'code' }] },
+                      { type: 'text', text: ' - 保存文档' }
+                    ]
+                  }]
+                },
+                {
+                  type: 'listItem',
+                  content: [{
+                    type: 'paragraph',
+                    content: [
+                      { type: 'text', text: 'Ctrl/Cmd + Ctrl/Cmd', marks: [{ type: 'code' }] },
+                      { type: 'text', text: ' - 打开 AI 助手' }
+                    ]
+                  }]
+                },
+                {
+                  type: 'listItem',
+                  content: [{
+                    type: 'paragraph',
+                    content: [
+                      { type: 'text', text: '/', marks: [{ type: 'code' }] },
+                      { type: 'text', text: ' - 打开命令菜单' }
+                    ]
+                  }]
+                }
+              ]
+            },
+            {
+              type: 'paragraph'
+            },
+            {
+              type: 'paragraph',
+              content: [{ 
+                type: 'text', 
+                text: '🚀 现在开始编辑你的内容吧！你可以删除这些示例文字，或者直接在下方开始输入。',
+                marks: [{ type: 'italic' }]
+              }]
+            },
+            {
+              type: 'paragraph'
+            }
+          ]
+        },
+        
+        // ===== 功能开关（仅列出非默认值）=====
+        enableShare: false,               // 离线模式不需要分享
+        enableAuth: false,                // 离线模式不需要认证
+        // 隐藏文档列表和创建按钮，改用 API 演示
+        enableDocumentList: false,        // 隐藏内置文档列表（改用顶部 API 按钮演示）
+        enableCreateDocument: false,      // 隐藏内置创建按钮（改用顶部 API 按钮演示）
+        // 
+        useBuiltinModals: true,
+        
+        // 事件回调
+        // onSave: 手动保存 (Ctrl+S)
+        onSave: async ({ content, currentDocumentId }) => {
+          try {
+            const result = await editor.saveDocument(currentDocumentId, content);
+            if (result) {
+              Message.success('文档已保存到本地存储');
+            } else {
+              Message.error('保存失败');
+            }
+          } catch (error) {
+            Message.error('保存失败: ' + error.message);
+          }
+        },
+        
+        // onSaveDocument: 自动保存 (编辑 2 秒后自动触发)
+        onSaveDocument: async ({ content, documentId, isAutoSave }) => {
+          try {
+            const result = await editor.saveDocument(documentId, content);
+            if (result && !isAutoSave) {
+              Message.success('文档已保存');
+            } else if (!result && !isAutoSave) {
+              Message.error('保存失败');
+            }
+          } catch (error) {
+            if (!isAutoSave) {
+              Message.error('保存失败: ' + error.message);
+            }
+          }
+        },
+        
+        onChange: (content) => {
+          // 内容变更回调
+        },
+        
+        onCreateDocument: async (data) => {
+          try {
+            const newDocId = 'offline-doc-' + Date.now();
+            
+            const newDoc = await editor.updateDocumentMetadata(newDocId, {
+              id: newDocId,
+              name: data.name || '新建文档',
+              content: { type: 'doc', content: [] },
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+              publicPermission: 'private'
+            });
+            
+            const newUrl = window.location.pathname + '?docId=' + newDocId;
+            window.history.pushState({}, '', newUrl);
+            window.currentDocId = newDocId;
+            
+            editor.setCurrentDocumentId(newDocId);
+            Message.success('文档已创建并切换');
+            
+            return {
+              id: newDocId,
+              name: data.name || '新建文档',
+              createdAt: Date.now(),
+              updatedAt: Date.now()
+            };
+          } catch (error) {
+            Message.error('创建失败: ' + error.message);
+            return null;
+          }
+        },
+        
+        onSelectDocument: async (docId) => {
+          if (docId && docId !== currentDocId) {
+            const newUrl = window.location.pathname + '?docId=' + docId;
+            window.history.pushState({}, '', newUrl);
+            editor.setCurrentDocumentId(docId);
+          }
+        },
+        
+        onEditorReady: async (editorInstance) => {
+          try {
+            let doc = await editor.getDocument(currentDocId);
+            
+            if (!doc) {
+              const initialContent = editorInstance.getJSON();
+              await editor.updateDocumentMetadata(currentDocId, {
+                id: currentDocId,
+                name: '离线文档示例',
+                content: initialContent,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                publicPermission: 'private'
+              });
+            }
+          } catch (error) {
+            console.error('初始化文档失败:', error);
+          }
+        },
+        
+        // ===== 离线模式文件上传配置 =====
+        // 💡 不再需要手动配置 uploadAPI，SDK 会自动处理离线文件存储
+        // SDK 将自动：
+        // 1. 将文件转换为 Base64 保存到 IndexedDB
+        // 2. 返回持久化的 offline-file:// URL
+        // 3. 页面刷新后自动恢复文件
+      });
+      
+      // 暴露实例供调试和API演示使用
+      window.editor = editor;
+      window.JitWordMessage = Message;
+      window.currentDocId = currentDocId;
+    };
+    
+    /**
+     * 获取文档列表 - 演示 Jitword 实例 API
+     */
+    async function listDocuments() {
+      const jitwordInstance = window.editor;
+      if (!jitwordInstance) {
+        window.JitWordMessage.error('编辑器未初始化');
+        return;
+      }
+      
+      try {
+        if (jitwordInstance.getDocuments) {
+          const docs = await jitwordInstance.getDocuments('all');
+          
+          if (docs.length === 0) {
+            window.JitWordMessage.info('暂无文档，请创建一个新文档');
+            return;
+          }
+          
+          // 格式化显示文档列表
+          const currentDocId = window.currentDocId;
+          const docList = docs.map((doc, index) => {
+            const createdTime = new Date(doc.createdAt).toLocaleString('zh-CN');
+            const updatedTime = new Date(doc.updatedAt).toLocaleString('zh-CN');
+            const isCurrent = doc.id === currentDocId ? ' (当前)' : '';
+            return `${index + 1}. ${doc.name}${isCurrent}\n   ID: ${doc.id}\n   创建: ${createdTime}\n   更新: ${updatedTime}`;
+          }).join('\n\n');
+          
+          alert(`离线文档列表 (共 ${docs.length} 个)
+
+${docList}
+
+使用方法：const docs = await editor.getDocuments('all');`);
+          
+          window.JitWordMessage.success(`已获取 ${docs.length} 个文档`);
+        } else {
+          window.JitWordMessage.error('方法不可用');
+        }
+      } catch (error) {
+        window.JitWordMessage.error('获取文档列表失败: ' + error.message);
+      }
+    }
+    
+    /**
+     * 创建新文档 - 演示 Jitword 实例 API
+     */
+    async function createNewDocument() {
+      const jitwordInstance = window.editor;
+      if (!jitwordInstance) {
+        window.JitWordMessage.error('编辑器未初始化');
+        return;
+      }
+      
+      // 提示用户输入文档名称
+      const docName = prompt('请输入文档名称:', '新建文档 ' + new Date().toLocaleTimeString('zh-CN'));
+      
+      if (!docName) {
+        window.JitWordMessage.info('已取消创建');
+        return;
+      }
+      
+      try {
+        const newDoc = await jitwordInstance.createDocument(docName);
+        window.currentDocId = newDoc.id;
+        window.JitWordMessage.success(`文档「${docName}」已创建并切换`);
+      } catch (error) {
+        window.JitWordMessage.error('创建文档失败: ' + error.message);
+      }
+    }
+    
+    /**
+     * 设置文档内容 - 演示 Jitword 实例 API
+     */
+    function setDocumentContent() {
+      const jitwordInstance = window.editor;
+      if (!jitwordInstance) {
+        window.JitWordMessage.error('编辑器未初始化');
+        return;
+      }
+      
+      // 使用 Jitword 实例 API 设置内容
+      const newContent = {
+        type: 'doc',
+        content: [
+          {
+            type: 'heading',
+            attrs: { level: 1 },
+            content: [{ type: 'text', text: '通过 Jitword API 设置的内容' }]
+          },
+          {
+            type: 'paragraph',
+            content: [{ 
+              type: 'text', 
+              text: '这段内容是通过 Jitword 实例的 setContent() API 动态设置的！' 
+            }]
+          },
+          {
+            type: 'paragraph',
+            content: [{ 
+              type: 'text', 
+              text: 'API 调用时间：' + new Date().toLocaleString('zh-CN')
+            }]
+          },
+          {
+            type: 'paragraph',
+            content: [{ 
+              type: 'text', 
+              text: '使用方法：const editor = new Jitword({ ... }); editor.setContent(content);',
+              marks: [{ type: 'code' }]
+            }]
+          }
+        ]
+      };
+      
+      if (jitwordInstance.setContent) {
+        jitwordInstance.setContent(newContent);
+        window.JitWordMessage.success('文档内容已设置');
+      } else {
+        window.JitWordMessage.error('方法不可用');
+      }
+    }
+    
+    /**
+     * 加载空文档
+     */
+    function loadEmptyDocument() {
+      const jitwordInstance = window.editor;
+      if (!jitwordInstance) {
+        window.JitWordMessage.error('编辑器未初始化');
+        return;
+      }
+      
+      if (jitwordInstance.setContent) {
+        jitwordInstance.setContent({ type: 'doc', content: [] });
+        window.JitWordMessage.info('已加载空文档');
+      } else {
+        window.JitWordMessage.error('方法不可用');
+      }
+    }
+    
+    /**
+     * 获取文档内容 - 演示 Jitword 实例 API
+     */
+    function getDocumentContent() {
+      const jitwordInstance = window.editor;
+      if (!jitwordInstance) {
+        window.JitWordMessage.error('编辑器未初始化');
+        return;
+      }
+      
+      if (jitwordInstance.getJSON) {
+        const content = jitwordInstance.getJSON();
+        
+        // 显示内容统计
+        const contentStr = JSON.stringify(content, null, 2);
+        const stats = `文档内容统计
+
+内容大小: ${contentStr.length} 字符
+节点数量: ${content.content?.length || 0} 个
+
+使用方法：const content = editor.getJSON();
+
+内容预览：
+${contentStr.substring(0, 500)}${contentStr.length > 500 ? '...' : ''}`;
+        
+        alert(stats);
+        window.JitWordMessage.success('已获取文档内容');
+      } else {
+        window.JitWordMessage.error('方法不可用');
+      }
+    }
+    
+    // ===== 工具栏功能 =====
+    
+    /**
+     * 导出数据 - 演示 Jitword 实例 API
+     */
+    async function exportData() {
+      const jitwordInstance = window.editor;
+      if (!jitwordInstance) {
+        window.JitWordMessage.error('编辑器未初始化');
+        return;
+      }
+      
+      try {
+        if (jitwordInstance.exportData) {
+          const data = await jitwordInstance.exportData();
+          const blob = new Blob([data], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `jitword-offline-backup-${Date.now()}.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+          window.JitWordMessage.success('数据已导出');
+        } else {
+          window.JitWordMessage.error('方法不可用');
+        }
+      } catch (error) {
+        window.JitWordMessage.error('导出失败: ' + error.message);
+      }
+    }
+    
+    /**
+     * 清空数据 - 演示 Jitword 实例 API
+     */
+    async function clearData() {
+      if (!confirm('确定要清空所有离线数据吗？此操作不可恢复！')) {
+        return;
+      }
+      
+      const jitwordInstance = window.editor;
+      if (!jitwordInstance) {
+        window.JitWordMessage.error('编辑器未初始化');
+        return;
+      }
+      
+      try {
+        if (jitwordInstance.clearStorage) {
+          await jitwordInstance.clearStorage();
+          window.JitWordMessage.success('数据已清空');
+        } else {
+          window.JitWordMessage.error('方法不可用');
+        }
+      } catch (error) {
+        window.JitWordMessage.error('清空失败: ' + error.message);
+      }
+    }
+    
+    /**
+     * 存储统计 - 演示 Jitword 实例 API
+     */
+    async function showStats() {
+      const jitwordInstance = window.editor;
+      if (!jitwordInstance) {
+        window.JitWordMessage.error('编辑器未初始化');
+        return;
+      }
+      
+      try {
+        if (jitwordInstance.getStorageStats) {
+          const stats = await jitwordInstance.getStorageStats();
+          
+          const message = `存储统计
+
+文档:
+  总数: ${stats.total}
+  活动: ${stats.active}
+  已删除: ${stats.deleted}
+
+存储大小: ${stats.size}
+
+使用方法：const stats = await editor.getStorageStats();`;
+          
+          alert(message);
+          window.JitWordMessage.success('已获取统计数据');
+        } else {
+          window.JitWordMessage.error('方法不可用');
+        }
+      } catch (error) {
+        window.JitWordMessage.error('获取统计失败: ' + error.message);
+      }
+    }
+  </script>
+</body>
+</html>
+
