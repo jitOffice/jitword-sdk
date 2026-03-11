@@ -1238,4 +1238,5 @@ storage.clear();
 
 // 查看存储大小
 console.log('当前存储大小:', storage.getStorageSize());
+
 ```
