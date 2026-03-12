@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Excel Viewer</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    }
+    
+    #app {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: transparent;
+    }
+    
+    .loading, .error {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      font-size: 16px;
+      padding: 20px;
+    }
+    
+    .loading {
+      color: #666;
+    }
+    
+    .error {
+      color: #f56c6c;
+      text-align: center;
+    }
+    
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #999;
+      font-size: 14px;
+      padding: 20px;
+    }
+    
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+    
+    .error-detail {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #999;
+      max-width: 600px;
+      word-break: break-all;
+    }
+    
+    .excel-container {
+      flex: 1;
+      overflow: auto;
+      padding: 0;
+      background: transparent;
+    }
+    
+    .sheet-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0;
+      background: #f0f0f0;
+      border-top: 1px solid #c0c0c0;
+      overflow-x: auto;
+      min-height: 32px;
+    }
+    
+    .sheet-tab {
+      padding: 6px 20px;
+      border: none;
+      border-right: 1px solid #d0d0d0;
+      background: #e8e8e8;
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: 13px;
+      color: #333;
+      transition: background 0.15s;
+      position: relative;
+    }
+    
+    .sheet-tab:hover {
+      background: #d8d8d8;
+    }
+    
+    .sheet-tab.active {
+      background: #fff;
+      color: #000;
+      font-weight: 600;
+      border-top: 3px solid #217346;
+      padding-top: 3px;
+      border-right: 1px solid #c0c0c0;
+      border-left: 1px solid #c0c0c0;
+      margin: 0 -1px;
+      z-index: 1;
+    }
+    
+    .sheet-content {
+      background: #fff;
+      border-radius: 0;
+      padding: 0;
+      box-shadow: none;
+      position: relative;
+    }
+    
+    .sheet-images {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .sheet-image {
+      position: absolute;
+      pointer-events: auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    table {
+      border-collapse: collapse;
+      width: max-content;
+      min-width: 100%;
+      background: #fff;
+      table-layout: fixed;
+    }
+    
+    th, td {
+      border: 1px solid #d0d0d0;
+      padding: 4px 8px;
+      text-align: left;
+      font-size: 11pt;
+      min-width: 64px;
+      height: 21px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      vertical-align: middle;
+      overflow: hidden;
+    }
+    
+    th {
+      background: #f0f0f0;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    tr:hover {
+      background: rgba(0, 0, 0, 0.02);
+    }
+    
+    .empty-cell {
+      color: transparent;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="loading" v-if="loading">
+      <div>加载中...</div>
+    </div>
+    <div class="empty-state" v-else-if="!sheets || sheets.length === 0">
+      <div>Excel文件准备中...</div>
+    </div>
+    <template v-else>
+      <div class="excel-container">
+        <div class="sheet-content" v-if="sheets[currentSheetIndex]">
+          <table>
+            <colgroup>
+              <col v-for="(width, index) in sheets[currentSheetIndex].columnWidths" 
+                   :key="index" 
+                   :style="{ width: width + 'px' }">
+            </colgroup>
+            <tbody>
+              <tr v-for="(row, rowIndex) in sheets[currentSheetIndex].rows" 
+                  :key="rowIndex"
+                  :style="{ height: (row.height || 21) + 'px' }">
+                <td v-for="(cell, colIndex) in row.cells" 
+                    :key="colIndex"
+                    :colspan="cell.colspan || 1"
+                    :rowspan="cell.rowspan || 1"
+                    :style="cell.style"
+                    v-show="!cell.hidden">
+                  {{ cell.value }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <!-- Overlay images at their original positions -->
+          <div v-if="sheets[currentSheetIndex].images && sheets[currentSheetIndex].images.length > 0" 
+               class="sheet-images">
+            <img v-for="(img, index) in sheets[currentSheetIndex].images" 
+                 :key="index"
+                 :src="img.src" 
+                 :alt="'Image ' + (index + 1)"
+                 class="sheet-image"
+                 :style="{
+                   left: img.left + 'px',
+                   top: img.top + 'px',
+                   width: img.width + 'px',
+                   height: img.height + 'px'
+                 }">
+          </div>
+        </div>
+      </div>
+      <div class="sheet-tabs" v-if="sheets.length > 1">
+        <div 
+          v-for="(sheet, index) in sheets" 
+          :key="index"
+          class="sheet-tab"
+          :class="{ active: currentSheetIndex === index }"
+          @click="currentSheetIndex = index"
+        >
+          {{ sheet.name }}
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <!-- Import Vue 3 (Local) -->
+  <script src="./vue.global.prod.js"></script>
+  
+  <!-- Import ExcelJS (Local) -->
+  <script src="./vendor/exceljs.min.js"></script>
+
+  <script>
+    // Wait for DOM to be ready
+    window.addEventListener('DOMContentLoaded', function() {
+      // Check if Vue is loaded
+      if (typeof Vue === 'undefined') {
+        console.error('[Excel Viewer] Vue is not loaded!');
+        const appEl = document.getElementById('app');
+        if (appEl) {
+          appEl.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;color:#999;"><div style="font-size:14px;">Vue库加载失败</div><div style="font-size:12px;margin-top:8px;">请检查网络连接或刷新页面</div></div>';
+        }
+        return;
+      }
+      
+      console.log('[Excel Viewer] Vue loaded successfully');
+      const { createApp } = Vue;
+    
+    createApp({
+      data() {
+        return {
+          excelUrl: '',
+          loading: true,
+          error: null,
+          errorDetail: null,
+          sheets: [],
+          currentSheetIndex: 0
+        };
+      },
+      async mounted() {
+        // Get Excel URL from query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const url = urlParams.get('url');
+        
+        if (!url) {
+          // No URL provided - this is normal for initial load
+          this.loading = false;
+          return;
+        }
+        
+        this.excelUrl = decodeURIComponent(url);
+        await this.loadExcel();
+      },
+      methods: {
+        // Convert Excel cell reference (e.g., 'A1') to row/col coordinates
+        cellRefToCoords(ref) {
+          const match = ref.match(/^([A-Z]+)(\d+)$/);
+          if (!match) return { row: 1, col: 1 };
+          
+          const colStr = match[1];
+          const rowNum = parseInt(match[2]);
+          
+          // Convert column letters to number (A=1, B=2, ... Z=26, AA=27, etc.)
+          let col = 0;
+          for (let i = 0; i < colStr.length; i++) {
+            col = col * 26 + (colStr.charCodeAt(i) - 64);
+          }
+          
+          return { row: rowNum, col: col };
+        },
+        
+        // Convert ArrayBuffer to Base64
+        arrayBufferToBase64(buffer) {
+          let binary = '';
+          const bytes = new Uint8Array(buffer);
+          for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+          return btoa(binary);
+        },
+        
+        // Get MIME type from file extension
+        getImageMimeType(extension) {
+          const mimeTypes = {
+            'png': 'image/png',
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'gif': 'image/gif',
+            'bmp': 'image/bmp',
+            'svg': 'image/svg+xml'
+          };
+          return mimeTypes[extension.toLowerCase()] || 'image/png';
+        },
+        
+        async loadExcel() {
+          try {
+            // Convert URL to use proxy in development
+            let fetchUrl = this.excelUrl;
+            
+            // If URL is absolute, extract path to use as proxy (avoids CORS)
+            try {
+              const urlObj = new URL(this.excelUrl);
+              if (urlObj.hostname !== window.location.hostname) {
+                // Cross-origin URL: use just the path so the host page's proxy handles it
+                fetchUrl = urlObj.pathname + urlObj.search;
+                console.log('[Excel Viewer] Using proxy path:', fetchUrl);
+              }
+            } catch (e) {
+              // Not a valid absolute URL, use as-is (relative path)
+              console.log('[Excel Viewer] Using original path:', fetchUrl);
+            }
+            
+            // Fetch Excel file
+            const response = await fetch(fetchUrl);
+            if (!response.ok) {
+              // For 404 errors, show a softer message
+              if (response.status === 404) {
+                console.warn('[Excel Viewer] File not found (404), this may be a stale reference');
+                // Don't set error, just show empty state
+                this.loading = false;
+                return;
+              }
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const arrayBuffer = await response.arrayBuffer();
+            
+            // Parse Excel using ExcelJS
+            const workbook = new ExcelJS.Workbook();
+            await workbook.xlsx.load(arrayBuffer);
+            
+            // Convert all sheets to data with styles
+            this.sheets = [];
+            workbook.eachSheet((worksheet, sheetId) => {
+              // Get column widths
+              const columnWidths = [];
+              (worksheet.columns || []).forEach((col, index) => {
+                const width = col && col.width ? col.width * 7.5 : 64; // Excel width to pixels (approximate)
+                columnWidths.push(width);
+              });
+              
+              // Extract images from worksheet
+              const images = [];
+              if (worksheet.getImages) {
+                try {
+                  worksheet.getImages().forEach(image => {
+                    // Get image buffer from workbook
+                    const imageData = workbook.getImage(image.imageId);
+                    if (imageData && imageData.buffer) {
+                      // Convert buffer to base64 data URL
+                      const base64 = this.arrayBufferToBase64(imageData.buffer);
+                      const mimeType = this.getImageMimeType(imageData.extension);
+                      const dataUrl = `data:${mimeType};base64,${base64}`;
+                      
+                      // Calculate pixel position from range
+                      // range format: {tl: {col: 0, row: 0}, br: {col: 2, row: 10}, editAs: 'oneCell'}
+                      const range = image.range;
+                      let left = 0;
+                      let top = 0;
+                      let width = 0;
+                      let height = 0;
+                      
+                      if (range && range.tl && range.br) {
+                        // Calculate left position (sum of column widths before this column)
+                        for (let c = 0; c < range.tl.col; c++) {
+                          left += columnWidths[c] || 64;
+                        }
+                        // Add offset within the cell (nativeCol is in EMUs, 1 EMU = 1/914400 inch)
+                        if (range.tl.nativeCol) {
+                          left += (range.tl.nativeCol / 914400) * 96; // Convert EMU to pixels (96 DPI)
+                        }
+                        
+                        // Calculate top position (sum of row heights before this row)
+                        for (let r = 1; r <= range.tl.row; r++) {
+                          const row = worksheet.getRow(r);
+                          top += row.height || 21;
+                        }
+                        // Add offset within the cell
+                        if (range.tl.nativeRow) {
+                          top += (range.tl.nativeRow / 914400) * 96;
+                        }
+                        
+                        // Calculate width (columns spanned)
+                        for (let c = range.tl.col; c < range.br.col; c++) {
+                          width += columnWidths[c] || 64;
+                        }
+                        if (range.br.nativeCol) {
+                          width += (range.br.nativeCol / 914400) * 96;
+                        }
+                        
+                        // Calculate height (rows spanned)
+                        for (let r = range.tl.row + 1; r <= range.br.row; r++) {
+                          const row = worksheet.getRow(r);
+                          height += row.height || 21;
+                        }
+                        if (range.br.nativeRow) {
+                          height += (range.br.nativeRow / 914400) * 96;
+                        }
+                      }
+                      
+                      // Store image with position info
+                      images.push({
+                        src: dataUrl,
+                        range: range,
+                        left: left,
+                        top: top,
+                        width: width || 200,
+                        height: height || 150,
+                        extension: imageData.extension
+                      });
+                    }
+                  });
+                } catch (err) {
+                  console.warn('[Excel Viewer] Failed to extract images:', err);
+                }
+              }
+              
+              // Build merged cells map for quick lookup
+              const mergedCells = new Map();
+              if (worksheet.model.merges) {
+                worksheet.model.merges.forEach(merge => {
+                  // merge format: 'A1:B2'
+                  const [start, end] = merge.split(':');
+                  const startRef = this.cellRefToCoords(start);
+                  const endRef = this.cellRefToCoords(end);
+                  
+                  // Mark all cells in merge range
+                  for (let r = startRef.row; r <= endRef.row; r++) {
+                    for (let c = startRef.col; c <= endRef.col; c++) {
+                      mergedCells.set(`${r}-${c}`, {
+                        master: r === startRef.row && c === startRef.col,
+                        colspan: endRef.col - startRef.col + 1,
+                        rowspan: endRef.row - startRef.row + 1
+                      });
+                    }
+                  }
+                });
+              }
+              
+              // Process rows and cells
+              const rows = [];
+              const actualColCount = worksheet.actualColumnCount || worksheet.columnCount || columnWidths.length || 10;
+              worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+                const rowData = {
+                  height: row.height || 21,
+                  cells: []
+                };
+                
+                // Ensure we have cells for all columns
+                const maxCol = Math.max(actualColCount, columnWidths.length, row.cellCount || 0, row.actualCellCount || 0);
+                
+                for (let colNumber = 1; colNumber <= maxCol; colNumber++) {
+                  const cell = row.getCell(colNumber);
+                  const mergeInfo = mergedCells.get(`${rowNumber}-${colNumber}`);
+                  
+                  // Skip cells that are part of a merge (but not the master)
+                  if (mergeInfo && !mergeInfo.master) {
+                    rowData.cells.push({
+                      value: '',
+                      hidden: true,
+                      style: {}
+                    });
+                    continue;
+                  }
+                  
+                  // Get cell value and text
+                  let value = cell.value;
+                  const cellText = cell.text; // ExcelJS also provides a .text property
+                  let isRichText = false;
+                  let hyperlink = null;
+                  let numFormat = cell.numFmt || null; // Number format for percentage, etc.
+                  
+                  // Check for hyperlink first
+                  if (cell.hyperlink) {
+                    hyperlink = cell.hyperlink;
+                    // For hyperlinks, use the cell's text property or the value's text if it's an object
+                    if (cellText && typeof cellText === 'string') {
+                      value = cellText;
+                    } else if (value && typeof value === 'object' && value.text) {
+                      value = value.text;
+                    } else if (typeof hyperlink === 'string') {
+                      value = hyperlink;
+                    } else if (typeof hyperlink === 'object') {
+                      value = hyperlink.text || hyperlink.hyperlink || '';
+                    }
+                  }
+                  
+                  // If still no value, try cell.text
+                  if (!value && cellText) {
+                    value = cellText;
+                  }
+                  
+                  // Process cell value
+                  if (value && typeof value === 'object') {
+                    if (value.richText) {
+                      // Rich text - extract plain text
+                      value = value.richText.map(t => t.text).join('');
+                      isRichText = true;
+                    } else if (value.result !== undefined) {
+                      // Formula with result - use calculated result
+                      value = value.result;
+                    } else if (value.formula && value.result === undefined) {
+                      // Formula without result - show the formula
+                      value = '=' + value.formula;
+                    } else if (value.text !== undefined) {
+                      // Text object
+                      value = value.text;
+                    } else if (value.hyperlink) {
+                      // Value is a hyperlink object
+                      value = value.text || value.hyperlink || '';
+                    } else if (value.formula) {
+                      // Pure formula object - show formula
+                      value = '=' + value.formula;
+                    } else {
+                      // Unknown object - log and use empty string
+                      console.warn('[Excel Viewer] Unknown cell value object:', value);
+                      value = '';
+                    }
+                  } else if (value instanceof Date) {
+                    value = value.toLocaleDateString();
+                  }
+                  
+                  // Convert to string and apply number formatting
+                  if (value != null) {
+                    // Check if it's a number and has percentage format
+                    if (typeof value === 'number' && numFormat && numFormat.includes('%')) {
+                      // Format as percentage
+                      value = (value * 100).toFixed(2) + '%';
+                    } else {
+                      value = String(value);
+                    }
+                  } else {
+                    value = '';
+                  }
+                  
+                  // Build cell style object
+                  const cellStyle = {};
+                  
+                  // Background color
+                  if (cell.fill && cell.fill.fgColor) {
+                    const color = cell.fill.fgColor.argb;
+                    if (color && color.length >= 6) {
+                      cellStyle.backgroundColor = '#' + color.slice(-6);
+                    }
+                  }
+                  
+                  // Font styles
+                  if (cell.font) {
+                    if (cell.font.bold) cellStyle.fontWeight = 'bold';
+                    if (cell.font.italic) cellStyle.fontStyle = 'italic';
+                    if (cell.font.underline) cellStyle.textDecoration = 'underline';
+                    if (cell.font.strike) {
+                      cellStyle.textDecoration = cellStyle.textDecoration 
+                        ? cellStyle.textDecoration + ' line-through' 
+                        : 'line-through';
+                    }
+                    if (cell.font.size) cellStyle.fontSize = cell.font.size + 'pt';
+                    if (cell.font.color && cell.font.color.argb) {
+                      const color = cell.font.color.argb;
+                      if (color.length >= 6) {
+                        cellStyle.color = '#' + color.slice(-6);
+                      }
+                    }
+                    if (cell.font.name) cellStyle.fontFamily = cell.font.name;
+                  }
+                  
+                  // Apply hyperlink styles
+                  if (hyperlink) {
+                    cellStyle.color = cellStyle.color || '#0563c1';
+                    cellStyle.textDecoration = 'underline';
+                    cellStyle.cursor = 'pointer';
+                  }
+                  
+                  // Alignment
+                  if (cell.alignment) {
+                    if (cell.alignment.horizontal) {
+                      const alignMap = { left: 'left', center: 'center', right: 'right' };
+                      cellStyle.textAlign = alignMap[cell.alignment.horizontal] || 'left';
+                    }
+                    if (cell.alignment.vertical) {
+                      const valignMap = { top: 'top', middle: 'middle', bottom: 'bottom' };
+                      cellStyle.verticalAlign = valignMap[cell.alignment.vertical] || 'middle';
+                    }
+                    if (cell.alignment.wrapText) {
+                      cellStyle.whiteSpace = 'pre-wrap';
+                    }
+                  }
+                  
+                  // Borders
+                  if (cell.border) {
+                    ['top', 'right', 'bottom', 'left'].forEach(side => {
+                      if (cell.border[side] && cell.border[side].style) {
+                        const borderColor = cell.border[side].color?.argb;
+                        const color = borderColor && borderColor.length >= 6 ? '#' + borderColor.slice(-6) : '#d0d0d0';
+                        cellStyle[`border-${side}`] = `1px solid ${color}`;
+                      }
+                    });
+                  }
+                  
+                  rowData.cells.push({
+                    value: value,
+                    style: cellStyle,
+                    colspan: mergeInfo?.colspan || 1,
+                    rowspan: mergeInfo?.rowspan || 1,
+                    hidden: false
+                  });
+                }
+                
+                rows.push(rowData);
+              });
+              
+              this.sheets.push({
+                name: worksheet.name,
+                rows: rows,
+                columnWidths: columnWidths,
+                images: images
+              });
+            });
+            
+            if (this.sheets.length === 0) {
+              throw new Error('Excel文件为空');
+            }
+            
+            console.log('[Excel Viewer] Loaded', this.sheets.length, 'sheets,',
+              this.sheets.map(s => `${s.name}: ${s.rows.length} rows, ${s.columnWidths.length} cols`));
+            this.loading = false;
+            
+          } catch (error) {
+            console.error('[Excel Viewer] Error loading Excel:', error);
+            this.error = '加载Excel文件失败';
+            this.errorDetail = error.message || String(error);
+            this.loading = false;
+          }
+        }
+      }
+    }).mount('#app');
+    }); // Close DOMContentLoaded event listener
+  </script>
+</body>
+</html>
