@@ -1,5 +1,3 @@
-# JitWord Web SDK 使用文档
-
 ![](./demo.png)
 
 # JitWord Web SDK 使用文档
