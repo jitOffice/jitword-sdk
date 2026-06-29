@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>@jitword/sheet-sdk — CDN Example</title>
+
+  <!-- Univer CSS (bundled in JS for build:full mode) -->
+  <!-- ===== 1. Univer + JitSheet CSS ===== -->
+  <link rel="stylesheet" href="./lib/univer.css" />
+  <style>
+    :root {
+      --excel-green: #107c41;
+      --excel-green-dark: #0b5f31;
+      --excel-green-soft: #e7f3ec;
+      --surface: #ffffff;
+      --surface-muted: #f6f8fa;
+      --border: #d8dee4;
+      --text: #1f2328;
+      --text-muted: #667085;
+      --shadow: 0 10px 30px rgba(16, 24, 40, 0.12);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex; flex-direction: column; color: var(--text);
+      background: linear-gradient(180deg, #eef6f1 0, #f8fafc 180px, #eef1f4 100%);
+    }
+
+    .app-header {
+      flex-shrink: 0; background: var(--excel-green); color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18); z-index: 2;
+    }
+    .title-bar {
+      min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      padding: 0 18px; background: linear-gradient(90deg, var(--excel-green-dark), var(--excel-green));
+    }
+    .nav-left { display: flex; align-items: center; gap: 18px; min-width: 0; }
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; flex-shrink: 0; }
+    .brand-icon {
+      width: 26px; height: 26px; border-radius: 6px; display: grid; place-items: center;
+      background: rgba(255,255,255,0.18); font-weight: 800; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+    }
+    .brand-title { font-size: 14px; font-weight: 700; white-space: nowrap; }
+    .brand-subtitle { margin-left: 6px; font-size: 12px; color: rgba(255,255,255,0.74); font-weight: 400; }
+    .product-matrix { display: flex; align-items: center; gap: 4px; min-width: 0; }
+    .product-link {
+      display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 6px;
+      color: rgba(255,255,255,0.88); text-decoration: none; font-size: 12px; white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .product-link:hover { background: rgba(255,255,255,0.16); color: #fff; }
+    .nav-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .github-link {
+      display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 12px;
+      border: 1px solid rgba(255,255,255,0.28); border-radius: 999px;
+      color: #fff; background: rgba(255,255,255,0.12); text-decoration: none;
+      font-size: 12px; font-weight: 600; transition: all 0.15s ease;
+    }
+    .github-link:hover { background: rgba(255,255,255,0.2); }
+    .github-stars {
+      padding-left: 8px; border-left: 1px solid rgba(255,255,255,0.24);
+      color: rgba(255,255,255,0.82); font-variant-numeric: tabular-nums;
+    }
+    .quick-actions { display: flex; align-items: center; gap: 8px; }
+    .quick-actions button {
+      height: 28px; padding: 0 12px; border: 1px solid rgba(255,255,255,0.28);
+      border-radius: 6px; color: #fff; background: rgba(255,255,255,0.12); cursor: pointer;
+      font-size: 12px; transition: all 0.15s ease;
+    }
+    .quick-actions button:hover { background: rgba(255,255,255,0.2); }
+
+    .ribbon {
+      display: flex; align-items: stretch; gap: 0; padding: 10px 14px 8px;
+      background: var(--surface); color: var(--text); border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+    }
+    .ribbon-group {
+      display: flex; flex-direction: column; gap: 7px; min-width: 128px;
+      padding: 0 14px; border-right: 1px solid var(--border);
+    }
+    .ribbon-group:first-child { padding-left: 0; }
+    .ribbon-group:last-child { border-right: none; }
+    .group-title {
+      font-size: 11px; color: var(--text-muted); text-align: center; white-space: nowrap;
+      letter-spacing: 0.2px;
+    }
+    .group-controls { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+    .tool-btn, .import-control {
+      min-height: 30px; padding: 5px 10px; border: 1px solid #c8d0d8; border-radius: 6px;
+      background: linear-gradient(180deg, #fff, #f5f7f9); color: var(--text); cursor: pointer;
+      font-size: 12px; white-space: nowrap; transition: all 0.14s ease;
+    }
+    .tool-btn:hover, .import-control:hover {
+      border-color: #99b8a7; background: var(--excel-green-soft); color: var(--excel-green-dark);
+      box-shadow: 0 1px 4px rgba(16,124,65,0.12);
+    }
+    .tool-btn.primary {
+      background: var(--excel-green); border-color: var(--excel-green); color: #fff;
+    }
+    .tool-btn.primary:hover { background: var(--excel-green-dark); color: #fff; }
+    .tool-btn.active { background: #f59e0b; color: #fff; border-color: #d97706; }
+    .tool-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .import-control { display: inline-flex; align-items: center; gap: 6px; overflow: hidden; }
+    .import-control input { display: none; }
+
+    #sheet-container {
+      flex: 1; min-height: 0; margin: 12px; border: 1px solid #c9d3df; border-radius: 10px;
+      background: #fff; overflow: hidden; box-shadow: var(--shadow);
+    }
+
+    .status-bar {
+      flex-shrink: 0; min-height: 28px; padding: 5px 14px;
+      background: var(--excel-green); color: rgba(255,255,255,0.88); font-size: 12px;
+      display: flex; gap: 18px; align-items: center; border-top: 1px solid rgba(0,0,0,0.12);
+    }
+    .status-bar .status-item { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .status-bar .status-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: #86efac;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.16);
+    }
+    .status-bar .status-dot.idle { background: #d1d5db; }
+    .status-bar .status-dot.connecting { background: #fde047; }
+    .status-bar .status-dot.disconnected { background: #fca5a5; }
+    #status-msg { margin-left: auto; color: #fff; font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+
+    @media (max-width: 1200px) {
+      .title-bar { align-items: flex-start; flex-direction: column; padding: 10px 14px; }
+      .nav-left, .nav-right { width: 100%; }
+      .nav-left { align-items: flex-start; flex-direction: column; gap: 8px; }
+      .product-matrix { width: 100%; overflow-x: auto; padding-bottom: 2px; }
+      .nav-right { justify-content: space-between; flex-wrap: wrap; }
+    }
+
+    @media (max-width: 960px) {
+      .brand-subtitle { display: none; }
+      .quick-actions { flex-wrap: wrap; }
+      .ribbon { overflow-x: auto; padding-bottom: 10px; }
+      .ribbon-group { min-width: 150px; }
+      #sheet-container { margin: 8px; border-radius: 8px; }
+      .status-bar { overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="title-bar">
+      <div class="nav-left">
+        <div class="brand">
+          <div class="brand-icon">X</div>
+          <div>
+            <span class="brand-title">JitSheet 示例工作簿</span>
+            <span class="brand-subtitle">体验表格创建、数据读写、导入导出与权限控制</span>
+          </div>
+        </div>
+        <nav class="product-matrix" aria-label="产品矩阵">
+          <a class="product-link" href="https://jitword.com" target="_blank" rel="noopener noreferrer">jitword 协同AI文档</a>
+          <a class="product-link" href="https://jitword.com/mind/example" target="_blank" rel="noopener noreferrer">jitmind 思维导图</a>
+          <a class="product-link" href="https://know.jitword.com" target="_blank" rel="noopener noreferrer">jitknow AI知识库</a>
+          <a class="product-link" href="https://pxcharts.turntip.cn" target="_blank" rel="noopener noreferrer">pxcharts 多维表格</a>
+        </nav>
+      </div>
+      <div class="nav-right">
+        <div class="quick-actions" aria-label="常用操作">
+          <button onclick="handleFocus()">聚焦表格</button>
+          <button onclick="handleGetZoom()">查看缩放</button>
+          <button onclick="handleSetData()">加载示例数据</button>
+        </div>
+        <a class="github-link" href="https://github.com/jitOffice/jitword-sdk" target="_blank" rel="noopener noreferrer" aria-label="GitHub repository">
+          <span>GitHub</span>
+          <span class="github-stars" id="github-stars">Star</span>
+        </a>
+      </div>
+    </div>
+
+    <nav class="ribbon" aria-label="电子表格工具栏">
+      <section class="ribbon-group">
+        <div class="group-controls">
+          <button class="tool-btn primary" onclick="handleCreateSheet()">＋ 新建工作表</button>
+          <button class="tool-btn" onclick="handleRenameSheet()">重命名</button>
+          <button class="tool-btn" onclick="handleDeleteSheet()">删除</button>
+          <button class="tool-btn" onclick="handleListSheets()">查看列表</button>
+        </div>
+        <div class="group-title">工作表</div>
+      </section>
+
+      <section class="ribbon-group">
+        <div class="group-controls">
+          <button class="tool-btn" onclick="handleGetData()">查看数据</button>
+          <button class="tool-btn" onclick="handleSetCell()">写入 A1</button>
+          <button class="tool-btn" onclick="handleGetCell()">读取 A1</button>
+          <button class="tool-btn" onclick="handleSetMultipleCells()">填充 A1:B2</button>
+          <button class="tool-btn" onclick="handleGetSheetData()">当前表数据</button>
+          <button class="tool-btn" onclick="handleClearData()">清空</button>
+        </div>
+        <div class="group-title">数据操作</div>
+      </section>
+
+      <section class="ribbon-group">
+        <div class="group-controls">
+          <button class="tool-btn" onclick="handleToggleReadonly()" id="btn-readonly">设为只读</button>
+        </div>
+        <div class="group-title">权限</div>
+      </section>
+
+      <section class="ribbon-group">
+        <div class="group-controls">
+          <button class="tool-btn" onclick="handleExportExcel()">导出 Excel</button>
+          <label class="import-control">
+            导入 Excel
+            <input type="file" accept=".xlsx,.xls" onchange="handleImportExcel(event)" />
+          </label>
+        </div>
+        <div class="group-title">Excel</div>
+      </section>
+
+      <section class="ribbon-group">
+        <div class="group-controls">
+          <button class="tool-btn" onclick="handleExportJson()">导出 JSON</button>
+          <button class="tool-btn" onclick="handleImportJson()">导入示例 JSON</button>
+        </div>
+        <div class="group-title">JSON</div>
+      </section>
+    </nav>
+  </header>
+
+  <!-- ===== Sheet Container ===== -->
+  <div id="sheet-container"></div>
+
+  <!-- ===== Status Bar ===== -->
+  <div class="status-bar">
+    <div class="status-item">
+      <span class="status-dot idle" id="collab-dot"></span>
+      <span id="collab-status">离线</span>
+    </div>
+    <div class="status-item" id="status-selection">选区：—</div>
+    <div class="status-item" id="status-sheets">工作表：—</div>
+    <div class="status-item" id="status-zoom">缩放：—</div>
+    <div class="status-item" id="status-msg">就绪</div>
+  </div>
+
+  <!-- ===== SDK (self-contained full bundle, includes Univer engine) ===== -->
+  <script>
+    // Polyfill Node.js globals for bundled dependencies
+    if (typeof window.process === 'undefined') {
+      window.process = { env: { NODE_ENV: 'production' }, versions: { node: '' }, nextTick: function(fn) { setTimeout(fn, 0) }, browser: true };
+    }
+  </script>
+  <script src="./lib/jit-sheet.full.js"></script>
+
+  <script>
+    // ===== SDK Init =====
+    var JitSheet = window.JitSheet.JitSheet
+
+    var sheet = new JitSheet({
+      container: '#sheet-container',
+      editable: true,
+      locale: 'zh-CN',
+      onChange: function (snapshot) {
+        updateSheetCount(snapshot)
+        setStatus('已保存变更：' + Object.keys(snapshot.sheets).length + ' 个工作表')
+      },
+      onError: function (err) {
+        console.error('[SDK Error]', err)
+        setStatus('错误：' + err.message)
+      },
+    })
+
+    // ===== State =====
+    var isReadonly = false
+
+    // ===== Events =====
+    sheet.on('ready', function () {
+      var data = sheet.data.getData()
+      if (data) updateSheetCount(data)
+      setStatus('表格已初始化')
+    })
+
+    sheet.on('selection', function (sel) {
+      var cellLabel = colName(sel.col) + (sel.row + 1)
+      document.getElementById('status-selection').textContent = '选区：' + cellLabel
+    })
+
+    sheet.on('zoom', function (ev) {
+      document.getElementById('status-zoom').textContent = '缩放：' + Math.round(ev.ratio * 100) + '%'
+    })
+
+    sheet.on('tab:switch', function (ev) {
+      setStatus('Switched to sheet: ' + ev.sheetId)
+    })
+
+    sheet.on('permission:change', function (mode) {
+      setStatus('Permission: ' + mode)
+    })
+
+    sheet.on('collab:status', function (status) {
+      var dot = document.getElementById('collab-dot')
+      var text = document.getElementById('collab-status')
+      dot.className = 'status-dot ' + status
+      text.textContent = status === 'idle' ? '空闲' : status === 'connecting' ? '连接中' : status === 'connected' ? '已连接' : '已断开'
+    })
+
+    // ===== Row 1: Sheet Management / Permission / Instance =====
+
+    function handleCreateSheet() {
+      var name = prompt('Sheet name:', 'Sheet ' + (sheet.sheets.getSheets().length + 1))
+      if (name) {
+        var id = sheet.sheets.createSheet(name)
+        sheet.sheets.switchSheet(id)
+        setStatus('Created sheet: ' + name)
+        updateSheetCount(sheet.data.getData())
+      }
+    }
+
+    function handleRenameSheet() {
+      var active = sheet.sheets.getActiveSheet()
+      if (!active) { alert('No active sheet'); return }
+      var name = prompt('Rename sheet:', active.name)
+      if (name) {
+        sheet.sheets.renameSheet(active.id, name)
+        setStatus('Renamed → ' + name)
+      }
+    }
+
+    function handleDeleteSheet() {
+      var sheets = sheet.sheets.getSheets()
+      if (sheets.length <= 1) { alert('Cannot delete the last sheet'); return }
+      var active = sheet.sheets.getActiveSheet()
+      if (!active) return
+      if (confirm('Delete sheet "' + active.name + '"?')) {
+        sheet.sheets.deleteSheet(active.id)
+        setStatus('Deleted sheet')
+        updateSheetCount(sheet.data.getData())
+      }
+    }
+
+    function handleListSheets() {
+      var sheets = sheet.sheets.getSheets()
+      console.log('[Example] All sheets:', sheets)
+      var names = sheets.map(function(s) { return s.name + (s.isActive ? ' (active)' : '') })
+      alert('Sheets:\n' + names.join('\n'))
+    }
+
+    function handleToggleReadonly() {
+      isReadonly = !isReadonly
+      if (isReadonly) {
+        sheet.permission.setReadonly()
+        document.getElementById('btn-readonly').textContent = '恢复编辑'
+        document.getElementById('btn-readonly').classList.add('active')
+      } else {
+        sheet.permission.setEditable()
+        document.getElementById('btn-readonly').textContent = '设为只读'
+        document.getElementById('btn-readonly').classList.remove('active')
+      }
+    }
+
+    function handleFocus() {
+      sheet.focus()
+      setStatus('Focused')
+    }
+
+    function handleGetZoom() {
+      var zoom = sheet.getZoom()
+      document.getElementById('status-zoom').textContent = '缩放：' + Math.round(zoom * 100) + '%'
+      setStatus('当前缩放：' + Math.round(zoom * 100) + '%')
+    }
+
+    // ===== Row 2: Data / Cell Operations =====
+
+    function handleGetData() {
+      var data = sheet.data.getData()
+      console.log('[Example] Full data:', data)
+      alert('数据已输出到控制台。工作表数量：' + (data && data.sheetOrder ? data.sheetOrder.length : 0))
+    }
+
+    function handleSetCell() {
+      var active = sheet.sheets.getActiveSheet()
+      if (active) {
+        var value = prompt('Value for A1:', 'Hello from SDK!')
+        if (value !== null) {
+          sheet.data.setCellValue(active.id, 0, 0, value)
+          setStatus('Set A1 = "' + value + '"')
+        }
+      }
+    }
+
+    function handleGetCell() {
+      var active = sheet.sheets.getActiveSheet()
+      if (active) {
+        var val = sheet.data.getCellValue(active.id, 0, 0)
+        alert('A1 value: ' + (val !== undefined ? JSON.stringify(val) : '(empty)'))
+        setStatus('A1 = ' + (val !== undefined ? val : '(empty)'))
+      }
+    }
+
+    function handleSetMultipleCells() {
+      var active = sheet.sheets.getActiveSheet()
+      if (active) {
+        sheet.data.setCells(active.id, {
+          0: { 0: { v: 'A1' }, 1: { v: 'B1' } },
+          1: { 0: { v: 'A2' }, 1: { v: 'B2' } },
+        })
+        setStatus('Set A1:B2 with sample data')
+      }
+    }
+
+    function handleGetSheetData() {
+      var active = sheet.sheets.getActiveSheet()
+      if (active) {
+        var data = sheet.data.getSheetData(active.id)
+        console.log('[Example] Sheet data for "' + active.name + '":', data)
+        setStatus('Sheet data logged to console')
+      }
+    }
+
+    function handleClearData() {
+      if (confirm('Clear all data?')) {
+        sheet.data.clearData()
+        setStatus('Data cleared')
+        updateSheetCount(sheet.data.getData())
+      }
+    }
+
+    function handleSetData() {
+      var sampleSnapshot = {
+        sheets: {
+          'sample1': {
+            id: 'sample1',
+            name: 'Sample Sheet',
+            cellData: {
+              0: { 0: { v: 'Name' }, 1: { v: 'Age' }, 2: { v: 'City' } },
+              1: { 0: { v: 'Alice' }, 1: { v: 30 }, 2: { v: 'Beijing' } },
+              2: { 0: { v: 'Bob' }, 1: { v: 25 }, 2: { v: 'Shanghai' } },
+              3: { 0: { v: 'Charlie' }, 1: { v: 35 }, 2: { v: 'Guangzhou' } },
+            },
+            rowCount: 100,
+            columnCount: 26,
+          }
+        },
+        sheetOrder: ['sample1'],
+      }
+      sheet.data.setData(sampleSnapshot)
+      setStatus('Loaded sample data')
+      updateSheetCount(sampleSnapshot)
+    }
+
+    // ===== Row 3: IO =====
+
+    function handleExportExcel() {
+      sheet.io.exportExcel('example-export.xlsx').then(function () {
+        setStatus('Exported Excel')
+      }).catch(function (e) {
+        console.error('Export failed:', e)
+        alert('Export failed: ' + e.message)
+      })
+    }
+
+    function handleImportExcel(event) {
+      var file = event.target.files && event.target.files[0]
+      if (!file) return
+      sheet.io.importExcel(file).then(function () {
+        setStatus('Imported: ' + file.name)
+        updateSheetCount(sheet.data.getData())
+      }).catch(function (e) {
+        console.error('Import failed:', e)
+        alert('Import failed: ' + e.message)
+      })
+      event.target.value = ''
+    }
+
+    function handleExportJson() {
+      var json = sheet.io.exportJSON()
+      console.log('[Example] Exported JSON:', json)
+      // Also trigger download
+      var blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' })
+      var url = URL.createObjectURL(blob)
+      var a = document.createElement('a')
+      a.href = url
+      a.download = 'sheet-export.json'
+      a.click()
+      URL.revokeObjectURL(url)
+      setStatus('Exported JSON')
+    }
+
+    function handleImportJson() {
+      var sampleJson = {
+        sheets: {
+          'json1': {
+            id: 'json1',
+            name: 'JSON Import',
+            cellData: {
+              0: { 0: { v: 'Imported' }, 1: { v: 'From' }, 2: { v: 'JSON' } },
+              1: { 0: { v: 100 }, 1: { v: 200 }, 2: { v: 300 } },
+            },
+            rowCount: 100,
+            columnCount: 26,
+          }
+        },
+        sheetOrder: ['json1'],
+      }
+      sheet.io.importJSON(sampleJson)
+      setStatus('Imported sample JSON data')
+      updateSheetCount(sheet.data.getData())
+    }
+
+    // ===== Helpers =====
+
+    function updateSheetCount(snapshot) {
+      if (!snapshot) return
+      var count = snapshot.sheetOrder ? snapshot.sheetOrder.length : Object.keys(snapshot.sheets || {}).length
+      document.getElementById('status-sheets').textContent = '工作表：' + count
+    }
+
+    function setStatus(msg) {
+      document.getElementById('status-msg').textContent = msg
+    }
+
+    function colName(col) {
+      var name = ''
+      col = col + 1
+      while (col > 0) {
+        col--
+        name = String.fromCharCode(65 + (col % 26)) + name
+        col = Math.floor(col / 26)
+      }
+      return name
+    }
+
+    ;(function loadGitHubStars() {
+      var starEl = document.getElementById('github-stars')
+      if (!starEl) return
+      fetch('https://api.github.com/repos/jitOffice/jitword-sdk')
+        .then(function(response) {
+          if (!response.ok) throw new Error('Failed to fetch GitHub stars')
+          return response.json()
+        })
+        .then(function(repo) {
+          var stars = repo.stargazers_count || 0
+          starEl.textContent = '★ ' + formatStars(stars)
+        })
+        .catch(function() {
+          starEl.textContent = '★ —'
+        })
+
+      function formatStars(count) {
+        if (count >= 1000) return (count / 1000).toFixed(count >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k'
+        return String(count)
+      }
+    })()
+  </script>
+</body>
+</html>

@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>@jitword/sheet-sdk — API Documentation</title>
+  <style>
+    :root {
+      --brand: #059669;
+      --brand-light: #ecfdf5;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --bg: #ffffff;
+      --bg-code: #f8fafc;
+      --border: #e2e8f0;
+      --radius: 8px;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.7;
+    }
+
+    /* Layout */
+    .page { display: flex; min-height: 100vh; }
+    .sidebar {
+      position: sticky; top: 0; height: 100vh; width: 260px;
+      overflow-y: auto; border-right: 1px solid var(--border);
+      padding: 24px 16px; flex-shrink: 0;
+    }
+    .sidebar h2 { font-size: 14px; color: var(--text-muted); margin: 20px 0 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .sidebar a {
+      display: block; padding: 5px 12px; border-radius: 6px;
+      color: var(--text); text-decoration: none; font-size: 14px; margin: 2px 0;
+    }
+    .sidebar a:hover { background: var(--brand-light); color: var(--brand); }
+    .sidebar .logo { font-size: 16px; font-weight: 700; color: var(--brand); margin-bottom: 24px; }
+    .main { flex: 1; max-width: 860px; padding: 48px 56px; }
+    .top-actions {
+      position: fixed; top: 20px; right: 24px; z-index: 10;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .action-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      height: 36px; padding: 0 14px; border-radius: 999px;
+      border: 1px solid var(--border); background: rgba(255,255,255,0.92);
+      color: var(--text); text-decoration: none; font-size: 13px; font-weight: 600;
+      box-shadow: 0 8px 24px rgba(15,23,42,0.08); backdrop-filter: blur(10px);
+      transition: all 0.16s ease;
+    }
+    .action-btn:hover { transform: translateY(-1px); border-color: rgba(5,150,105,0.35); color: var(--brand); box-shadow: 0 10px 28px rgba(15,23,42,0.12); }
+    .action-btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .action-btn-primary:hover { color: #fff; background: #047857; }
+    .github-stars {
+      margin-left: 2px; padding-left: 8px; border-left: 1px solid rgba(100,116,139,0.25);
+      color: var(--text-muted); font-variant-numeric: tabular-nums;
+    }
+
+    /* Typography */
+    h1 { font-size: 32px; margin-bottom: 12px; }
+    h2 { font-size: 22px; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    h3 { font-size: 17px; margin: 32px 0 12px; }
+    p, li { font-size: 15px; margin-bottom: 10px; }
+    ul { padding-left: 24px; }
+
+    /* Code */
+    code {
+      font-family: var(--font-mono); font-size: 13px;
+      background: var(--bg-code); padding: 2px 6px; border-radius: 4px;
+    }
+    pre {
+      background: #1e293b; color: #e2e8f0; padding: 20px 24px;
+      border-radius: var(--radius); overflow-x: auto; margin: 16px 0;
+      font-family: var(--font-mono); font-size: 13px; line-height: 1.6;
+    }
+    pre .comment { color: #94a3b8; }
+    pre .keyword { color: #c084fc; }
+    pre .string { color: #86efac; }
+    pre .type { color: #67e8f9; }
+    pre .fn { color: #fbbf24; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 14px; border: 1px solid var(--border); }
+    th { background: var(--bg-code); font-weight: 600; }
+
+    /* Badge */
+    .badge {
+      display: inline-block; font-size: 11px; font-weight: 600;
+      padding: 2px 8px; border-radius: 12px; margin-left: 8px;
+      vertical-align: middle;
+    }
+    .badge-sub { background: #dbeafe; color: #1d4ed8; }
+    .badge-event { background: #fef3c7; color: #92400e; }
+    .badge-type { background: #f0fdf4; color: #166534; }
+
+    /* Language switcher */
+    .lang-switch {
+      display: flex; gap: 4px; margin-bottom: 20px;
+      background: var(--bg-code); border-radius: 6px; padding: 3px;
+      border: 1px solid var(--border);
+    }
+    .lang-switch button {
+      flex: 1; padding: 5px 12px; border: none; border-radius: 4px;
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      background: transparent; color: var(--text-muted); transition: all 0.15s;
+    }
+    .lang-switch button.active {
+      background: var(--brand); color: #fff; box-shadow: 0 1px 3px rgba(5,150,105,0.3);
+    }
+    .lang-switch button:hover:not(.active) { color: var(--brand); }
+
+    /* i18n visibility — controlled by JS adding .lang-hidden class */
+    .lang-hidden { display: none !important; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main { padding: 76px 20px 24px; }
+      .top-actions { top: 14px; left: 16px; right: 16px; justify-content: flex-end; }
+      .action-btn { height: 34px; padding: 0 12px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <!-- Sidebar Navigation -->
+  <nav class="sidebar">
+    <div class="logo">@jitword/sheet-sdk</div>
+
+    <div class="lang-switch">
+      <button id="btn-en" class="active" onclick="setLang('en')">English</button>
+      <button id="btn-zh" onclick="setLang('zh')">中文</button>
+    </div>
+
+    <h2 data-lang="en">Getting Started</h2>
+    <h2 data-lang="zh">快速上手</h2>
+    <a href="#installation" data-lang="en">Installation (CDN)</a>
+    <a href="#installation" data-lang="zh">安装（CDN）</a>
+    <a href="#quick-start" data-lang="en">Quick Start</a>
+    <a href="#quick-start" data-lang="zh">快速开始</a>
+    <a href="#options" data-lang="en">Configuration</a>
+    <a href="#options" data-lang="zh">配置选项</a>
+
+    <h2 data-lang="en">Core API</h2>
+    <h2 data-lang="zh">核心 API</h2>
+    <a href="#jitsheet" data-lang="en">JitSheet (Facade)</a>
+    <a href="#jitsheet" data-lang="zh">JitSheet（主入口）</a>
+    <a href="#data-api" data-lang="en">DataAPI (Cell CRUD)</a>
+    <a href="#data-api" data-lang="zh">DataAPI（数据操作）</a>
+    <a href="#sheet-api" data-lang="en">SheetAPI (Tab Mgmt)</a>
+    <a href="#sheet-api" data-lang="zh">SheetAPI（工作表管理）</a>
+    <a href="#io-api" data-lang="en">IOAPI (Excel/JSON)</a>
+    <a href="#io-api" data-lang="zh">IOAPI（导入/导出）</a>
+    <a href="#permission-api" data-lang="en">PermissionAPI (Access)</a>
+    <a href="#permission-api" data-lang="zh">PermissionAPI（权限控制）</a>
+    <a href="#collab-api" data-lang="en">CollabAPI (Real-time)</a>
+    <a href="#collab-api" data-lang="zh">CollabAPI（实时协作）</a>
+
+    <h2 data-lang="en">Reference</h2>
+    <h2 data-lang="zh">参考</h2>
+    <a href="#events" data-lang="en">Events</a>
+    <a href="#events" data-lang="zh">事件</a>
+    <a href="#types" data-lang="en">Types</a>
+    <a href="#types" data-lang="zh">类型定义</a>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="top-actions" aria-label="Project links">
+      <a class="action-btn action-btn-primary" href="https://jitword.com/sheet/example" target="_blank" rel="noopener noreferrer">在线体验</a>
+      <a class="action-btn" href="https://github.com/jitOffice/jitword-sdk" target="_blank" rel="noopener noreferrer" aria-label="GitHub repository">
+        <span>GitHub</span>
+        <span class="github-stars" id="github-stars">Star</span>
+      </a>
+    </div>
+    <h1>@jitword/sheet-sdk</h1>
+    <p data-lang="en">A self-contained spreadsheet SDK wrapping the <strong>Univer.js</strong> engine. Provides structured APIs for cell data manipulation, sheet management, Excel import/export, permissions, and real-time collaboration.</p>
+    <p data-lang="zh">一个封装了 <strong>Univer.js</strong> 引擎的独立电子表格 SDK。提供单元格数据操作、工作表管理、Excel 导入导出、权限控制和实时协作等结构化 API。</p>
+
+    <!-- Installation -->
+    <h2 id="installation" data-lang="en">Installation (CDN)</h2>
+    <h2 data-lang="zh">安装（CDN）</h2>
+    <p data-lang="en">Load the SDK via <code>&lt;script&gt;</code> tags. The <strong>full bundle</strong> includes all dependencies (Univer engine, ExcelJS, etc.) in a single file.</p>
+    <p data-lang="zh">通过 <code>&lt;script&gt;</code> 标签加载 SDK。<strong>完整包</strong>将所有依赖（Univer 引擎、ExcelJS 等）打包为单一文件。</p>
+    <pre><span class="comment">&lt;!-- 1. Univer CSS --&gt;</span>
+<span class="keyword">&lt;link</span> rel=<span class="string">"stylesheet"</span> href=<span class="string">"./lib/univer.css"</span> <span class="keyword">/&gt;</span>
+
+<span class="comment">&lt;!-- 2. Process polyfill (required for bundled Node.js deps) --&gt;</span>
+<span class="keyword">&lt;script&gt;</span>
+  <span class="keyword">if</span> (<span class="keyword">typeof</span> window.process === <span class="string">'undefined'</span>) {
+    window.process = {
+      env: { NODE_ENV: <span class="string">'production'</span> },
+      versions: { node: <span class="string">''</span> },
+      nextTick: <span class="keyword">function</span>(fn) { setTimeout(fn, 0) },
+      browser: <span class="keyword">true</span>
+    };
+  }
+<span class="keyword">&lt;/script&gt;</span>
+
+<span class="comment">&lt;!-- 3. JitSheet SDK (full bundle, UMD) --&gt;</span>
+<span class="keyword">&lt;script</span> src=<span class="string">"./lib/jit-sheet.full.js"</span><span class="keyword">&gt;&lt;/script&gt;</span></pre>
+
+    <!-- Quick Start -->
+    <h2 id="quick-start" data-lang="en">Quick Start</h2>
+    <h2 data-lang="zh">快速开始</h2>
+    <pre><span class="comment">// Access the constructor from UMD global</span>
+<span class="comment">// 从 UMD 全局变量获取构造函数</span>
+<span class="keyword">var</span> JitSheet = window.JitSheet.JitSheet
+
+<span class="comment">// 1. Create instance | 创建实例</span>
+<span class="keyword">var</span> sheet = <span class="keyword">new</span> <span class="fn">JitSheet</span>({
+  container: <span class="string">'#spreadsheet'</span>,
+  locale: <span class="string">'zh-CN'</span>,
+  editable: <span class="keyword">true</span>,
+  onChange: <span class="keyword">function</span>(snapshot) {
+    console.log(<span class="string">'Data changed'</span>, snapshot)
+  }
+})
+
+<span class="comment">// 2. Use sub-APIs | 使用子 API</span>
+sheet.data.<span class="fn">setCellValue</span>(<span class="string">'sheet1'</span>, 0, 0, <span class="string">'Hello'</span>)
+sheet.sheets.<span class="fn">createSheet</span>(<span class="string">'New Sheet'</span>)
+sheet.io.<span class="fn">exportExcel</span>(<span class="string">'report.xlsx'</span>)
+
+<span class="comment">// 3. Listen to events | 监听事件</span>
+sheet.<span class="fn">on</span>(<span class="string">'change'</span>, <span class="keyword">function</span>(snapshot) {
+  console.log(<span class="string">'Data changed'</span>, snapshot)
+})
+
+<span class="comment">// 4. Cleanup | 销毁</span>
+sheet.<span class="fn">destroy</span>()</pre>
+
+    <!-- Configuration -->
+    <h2 id="options" data-lang="en">Configuration Options</h2>
+    <h2 data-lang="zh">配置选项</h2>
+
+    <table data-lang="en">
+      <thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>container</code></td><td><code>string | HTMLElement</code></td><td>—</td><td><strong>Required.</strong> CSS selector or DOM element.</td></tr>
+        <tr><td><code>locale</code></td><td><code>'zh-CN' | 'en-US'</code></td><td><code>'zh-CN'</code></td><td>UI locale for Univer.</td></tr>
+        <tr><td><code>editable</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Allow editing.</td></tr>
+        <tr><td><code>data</code></td><td><code>SheetSnapshot | null</code></td><td><code>null</code></td><td>Initial workbook data to load.</td></tr>
+        <tr><td><code>serverUrl</code></td><td><code>string</code></td><td>—</td><td>REST API base URL for save/load.</td></tr>
+        <tr><td><code>wsUrl</code></td><td><code>string</code></td><td>—</td><td>WebSocket URL for collaboration.</td></tr>
+        <tr><td><code>token</code></td><td><code>string</code></td><td>—</td><td>JWT authentication token.</td></tr>
+        <tr><td><code>userId</code></td><td><code>string</code></td><td>—</td><td>Current user ID.</td></tr>
+        <tr><td><code>username</code></td><td><code>string</code></td><td>—</td><td>Current user display name.</td></tr>
+        <tr><td><code>overrides</code></td><td><code>Array</code></td><td><code>[]</code></td><td>Univer DI overrides for custom services.</td></tr>
+        <tr><td><code>onChange</code></td><td><code>Function</code></td><td>—</td><td>Callback on data change.</td></tr>
+        <tr><td><code>onSave</code></td><td><code>Function</code></td><td>—</td><td>Callback on save.</td></tr>
+        <tr><td><code>onError</code></td><td><code>Function</code></td><td>—</td><td>Error handler callback.</td></tr>
+      </tbody>
+    </table>
+    <table data-lang="zh">
+      <thead><tr><th>选项</th><th>类型</th><th>默认值</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>container</code></td><td><code>string | HTMLElement</code></td><td>—</td><td><strong>必填。</strong> CSS 选择器或 DOM 元素。</td></tr>
+        <tr><td><code>locale</code></td><td><code>'zh-CN' | 'en-US'</code></td><td><code>'zh-CN'</code></td><td>Univer UI 语言。</td></tr>
+        <tr><td><code>editable</code></td><td><code>boolean</code></td><td><code>true</code></td><td>是否允许编辑。</td></tr>
+        <tr><td><code>data</code></td><td><code>SheetSnapshot | null</code></td><td><code>null</code></td><td>初始工作簿数据。</td></tr>
+        <tr><td><code>serverUrl</code></td><td><code>string</code></td><td>—</td><td>REST API 基础 URL（保存/加载）。</td></tr>
+        <tr><td><code>wsUrl</code></td><td><code>string</code></td><td>—</td><td>WebSocket URL（协作）。</td></tr>
+        <tr><td><code>token</code></td><td><code>string</code></td><td>—</td><td>JWT 认证令牌。</td></tr>
+        <tr><td><code>userId</code></td><td><code>string</code></td><td>—</td><td>当前用户 ID。</td></tr>
+        <tr><td><code>username</code></td><td><code>string</code></td><td>—</td><td>当前用户显示名称。</td></tr>
+        <tr><td><code>overrides</code></td><td><code>Array</code></td><td><code>[]</code></td><td>Univer 依赖注入覆盖。</td></tr>
+        <tr><td><code>onChange</code></td><td><code>Function</code></td><td>—</td><td>数据变更回调。</td></tr>
+        <tr><td><code>onSave</code></td><td><code>Function</code></td><td>—</td><td>保存成功回调。</td></tr>
+        <tr><td><code>onError</code></td><td><code>Function</code></td><td>—</td><td>错误处理回调。</td></tr>
+      </tbody>
+    </table>
+
+    <!-- JitSheet Facade -->
+    <h2 id="jitsheet">JitSheet <span class="badge badge-sub">Facade</span></h2>
+    <p data-lang="en">The main entry point. All sub-APIs are accessed via its properties.</p>
+    <p data-lang="zh">主入口类。所有子 API 通过其属性访问。</p>
+
+    <table data-lang="en">
+      <thead><tr><th>Property / Method</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>sheet.data</code></td><td>DataAPI — cell-level CRUD and snapshot operations.</td></tr>
+        <tr><td><code>sheet.sheets</code></td><td>SheetAPI — sheet (tab) management.</td></tr>
+        <tr><td><code>sheet.io</code></td><td>IOAPI — Excel/JSON import and export.</td></tr>
+        <tr><td><code>sheet.permission</code></td><td>PermissionAPI — edit/readonly toggling and protection.</td></tr>
+        <tr><td><code>sheet.collab</code></td><td>CollabAPI — real-time collaboration.</td></tr>
+        <tr><td><code>on(event, handler)</code></td><td>Subscribe to an event. Returns unsubscribe function.</td></tr>
+        <tr><td><code>once(event, handler)</code></td><td>Subscribe once — auto-removes after first call.</td></tr>
+        <tr><td><code>destroy()</code></td><td>Destroy the instance and release all resources.</td></tr>
+        <tr><td><code>reinit(snapshot)</code></td><td>Fully reinitialize with new data (destroys and recreates engine).</td></tr>
+        <tr><td><code>resize()</code></td><td>Trigger layout recalculation (after container resize).</td></tr>
+        <tr><td><code>focus()</code></td><td>Focus the editor container.</td></tr>
+      </tbody>
+    </table>
+    <table data-lang="zh">
+      <thead><tr><th>属性 / 方法</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>sheet.data</code></td><td>DataAPI — 单元格增删改查与快照操作。</td></tr>
+        <tr><td><code>sheet.sheets</code></td><td>SheetAPI — 工作表（标签页）管理。</td></tr>
+        <tr><td><code>sheet.io</code></td><td>IOAPI — Excel/JSON 导入导出。</td></tr>
+        <tr><td><code>sheet.permission</code></td><td>PermissionAPI — 编辑/只读切换与保护。</td></tr>
+        <tr><td><code>sheet.collab</code></td><td>CollabAPI — 实时协作。</td></tr>
+        <tr><td><code>on(event, handler)</code></td><td>订阅事件。返回取消订阅函数。</td></tr>
+        <tr><td><code>once(event, handler)</code></td><td>订阅一次 — 首次触发后自动移除。</td></tr>
+        <tr><td><code>destroy()</code></td><td>销毁实例并释放所有资源。</td></tr>
+        <tr><td><code>reinit(snapshot)</code></td><td>使用新数据完全重新初始化（销毁并重建引擎）。</td></tr>
+        <tr><td><code>resize()</code></td><td>触发布局重计算（容器大小变化后调用）。</td></tr>
+        <tr><td><code>focus()</code></td><td>聚焦编辑器容器。</td></tr>
+      </tbody>
+    </table>
+
+    <!-- DataAPI -->
+    <h2 id="data-api">DataAPI <span class="badge badge-sub">sheet.data</span></h2>
+    <p data-lang="en">Cell-level data CRUD and full workbook snapshot operations.</p>
+    <p data-lang="zh">单元格数据增删改查和工作簿快照操作。</p>
+
+    <table data-lang="en">
+      <thead><tr><th>Method</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>getData()</code></td><td>Get complete workbook snapshot (all sheets, styles, drawings).</td></tr>
+        <tr><td><code>setData(snapshot)</code></td><td>Replace entire workbook data with a new snapshot.</td></tr>
+        <tr><td><code>clearData()</code></td><td>Reset to a blank single-sheet workbook.</td></tr>
+        <tr><td><code>getCellValue(sheetId, row, col)</code></td><td>Get a single cell's value.</td></tr>
+        <tr><td><code>setCellValue(sheetId, row, col, value)</code></td><td>Set a single cell's value.</td></tr>
+        <tr><td><code>setCells(sheetId, cellValue)</code></td><td>Set multiple cells at once. Format: <code>{ [row]: { [col]: ICellData } }</code></td></tr>
+        <tr><td><code>getSheetData(sheetId?)</code></td><td>Get data for a single sheet (defaults to active sheet).</td></tr>
+        <tr><td><code>patchFromSnapshot(remote)</code></td><td>Apply remote snapshot by patching only changed cells. Returns <code>true</code> on success, <code>false</code> if full reinit is needed.</td></tr>
+      </tbody>
+    </table>
+    <table data-lang="zh">
+      <thead><tr><th>方法</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>getData()</code></td><td>获取完整工作簿快照（所有工作表、样式、图形）。</td></tr>
+        <tr><td><code>setData(snapshot)</code></td><td>用新快照替换整个工作簿数据。</td></tr>
+        <tr><td><code>clearData()</code></td><td>重置为空白单工作表。</td></tr>
+        <tr><td><code>getCellValue(sheetId, row, col)</code></td><td>获取单个单元格的值。</td></tr>
+        <tr><td><code>setCellValue(sheetId, row, col, value)</code></td><td>设置单个单元格的值。</td></tr>
+        <tr><td><code>setCells(sheetId, cellValue)</code></td><td>批量设置多个单元格。格式：<code>{ [row]: { [col]: ICellData } }</code></td></tr>
+        <tr><td><code>getSheetData(sheetId?)</code></td><td>获取单个工作表数据（默认为活动工作表）。</td></tr>
+        <tr><td><code>patchFromSnapshot(remote)</code></td><td>通过补丁方式应用远端快照（仅同步变更的单元格）。成功返回 <code>true</code>，结构性变更返回 <code>false</code>。</td></tr>
+      </tbody>
+    </table>
+    <pre><span class="comment">// Read & write cells | 读写单元格</span>
+<span class="keyword">const</span> val = sheet.data.<span class="fn">getCellValue</span>(<span class="string">'sheet1'</span>, 0, 0)
+sheet.data.<span class="fn">setCellValue</span>(<span class="string">'sheet1'</span>, 0, 0, <span class="string">'Hello World'</span>)
+
+<span class="comment">// Batch write | 批量写入</span>
+sheet.data.<span class="fn">setCells</span>(<span class="string">'sheet1'</span>, {
+  0: { 0: { v: <span class="string">'Name'</span> }, 1: { v: <span class="string">'Age'</span> } },
+  1: { 0: { v: <span class="string">'Alice'</span> }, 1: { v: 30 } },
+})
+
+<span class="comment">// Smart patch from server | 从服务端智能补丁</span>
+<span class="keyword">const</span> ok = sheet.data.<span class="fn">patchFromSnapshot</span>(remoteSnapshot)
+<span class="keyword">if</span> (!ok) sheet.<span class="fn">reinit</span>(remoteSnapshot)</pre>
+
+    <!-- SheetAPI -->
+    <h2 id="sheet-api">SheetAPI <span class="badge badge-sub">sheet.sheets</span></h2>
+    <p data-lang="en">Sheet (tab) management — create, delete, rename, list, and switch sheets.</p>
+    <p data-lang="zh">工作表（标签页）管理 — 创建、删除、重命名、列表和切换工作表。</p>
+
+    <table data-lang="en">
+      <thead><tr><th>Method</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>getSheets()</code></td><td>Get all sheets. Returns <code>SheetInfo[]</code>.</td></tr>
+        <tr><td><code>getActiveSheet()</code></td><td>Get the currently active sheet.</td></tr>
+        <tr><td><code>createSheet(name?)</code></td><td>Create a new sheet. Returns the new sheet ID.</td></tr>
+        <tr><td><code>deleteSheet(sheetId)</code></td><td>Delete a sheet by ID. Cannot delete the last sheet.</td></tr>
+        <tr><td><code>renameSheet(sheetId, name)</code></td><td>Rename a sheet.</td></tr>
+        <tr><td><code>switchSheet(sheetId)</code></td><td>Switch the active sheet tab.</td></tr>
+      </tbody>
+    </table>
+    <table data-lang="zh">
+      <thead><tr><th>方法</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>getSheets()</code></td><td>获取所有工作表。返回 <code>SheetInfo[]</code>。</td></tr>
+        <tr><td><code>getActiveSheet()</code></td><td>获取当前活动工作表。</td></tr>
+        <tr><td><code>createSheet(name?)</code></td><td>创建新工作表。返回新表 ID。</td></tr>
+        <tr><td><code>deleteSheet(sheetId)</code></td><td>按 ID 删除工作表。不能删除最后一个表。</td></tr>
+        <tr><td><code>renameSheet(sheetId, name)</code></td><td>重命名工作表。</td></tr>
+        <tr><td><code>switchSheet(sheetId)</code></td><td>切换活动工作表标签。</td></tr>
+      </tbody>
+    </table>
+    <pre><span class="comment">// Manage sheets | 管理工作表</span>
+<span class="keyword">const</span> sheets = sheet.sheets.<span class="fn">getSheets</span>()
+<span class="keyword">const</span> newId = sheet.sheets.<span class="fn">createSheet</span>(<span class="string">'Q1 Revenue'</span>)
+sheet.sheets.<span class="fn">switchSheet</span>(newId)
+sheet.sheets.<span class="fn">renameSheet</span>(newId, <span class="string">'Q1 Revenue (Final)'</span>)</pre>
+
+    <!-- IOAPI -->
+    <h2 id="io-api">IOAPI <span class="badge badge-sub">sheet.io</span></h2>
+    <p data-lang="en">Import and export workbook data in Excel (.xlsx) and JSON formats.</p>
+    <p data-lang="zh">以 Excel (.xlsx) 和 JSON 格式导入导出工作簿数据。</p>
+
+    <table data-lang="en">
+      <thead><tr><th>Method</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>importExcel(file)</code></td><td>Import an Excel file (<code>File</code> object) into the editor.</td></tr>
+        <tr><td><code>exportExcel(filename?)</code></td><td>Export as .xlsx Blob. If filename provided, triggers download.</td></tr>
+        <tr><td><code>importJSON(data)</code></td><td>Import JSON data (validates and loads as snapshot).</td></tr>
+        <tr><td><code>exportJSON()</code></td><td>Export current data as a deep-cloned JSON snapshot.</td></tr>
+      </tbody>
+    </table>
+    <table data-lang="zh">
+      <thead><tr><th>方法</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>importExcel(file)</code></td><td>导入 Excel 文件（<code>File</code> 对象）到编辑器。</td></tr>
+        <tr><td><code>exportExcel(filename?)</code></td><td>导出为 .xlsx Blob。传入文件名则触发下载。</td></tr>
+        <tr><td><code>importJSON(data)</code></td><td>导入 JSON 数据（校验并加载为快照）。</td></tr>
+        <tr><td><code>exportJSON()</code></td><td>导出当前数据为深拷贝的 JSON 快照。</td></tr>
+      </tbody>
+    </table>
+    <pre><span class="comment">// Export to Excel | 导出 Excel</span>
+<span class="keyword">await</span> sheet.io.<span class="fn">exportExcel</span>(<span class="string">'report.xlsx'</span>)
+
+<span class="comment">// Import from file input | 从文件输入导入</span>
+<span class="keyword">const</span> file = fileInput.files[0]
+<span class="keyword">await</span> sheet.io.<span class="fn">importExcel</span>(file)
+
+<span class="comment">// JSON round-trip | JSON 往返</span>
+<span class="keyword">const</span> json = sheet.io.<span class="fn">exportJSON</span>()
+localStorage.setItem(<span class="string">'backup'</span>, JSON.stringify(json))
+sheet.io.<span class="fn">importJSON</span>(JSON.parse(localStorage.getItem(<span class="string">'backup'</span>)))</pre>
+
+    <!-- PermissionAPI -->
+    <h2 id="permission-api">PermissionAPI <span class="badge badge-sub">sheet.permission</span></h2>
+    <p data-lang="en">Runtime permission toggling and sheet-level protection.</p>
+    <p data-lang="zh">运行时权限切换与工作表级保护。</p>
+
+    <table data-lang="en">
+      <thead><tr><th>Method</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>getMode()</code></td><td>Returns <code>'edit'</code> or <code>'readonly'</code>.</td></tr>
+        <tr><td><code>isEditable()</code></td><td>Returns <code>true</code> if currently in edit mode.</td></tr>
+        <tr><td><code>setEditable()</code></td><td>Switch to editable mode. Removes readonly overlay.</td></tr>
+        <tr><td><code>setReadonly()</code></td><td>Switch to readonly mode. Adds overlay mask.</td></tr>
+        <tr><td><code>setSheetProtection(sheetId, config)</code></td><td>Set sheet-level protection rules (password, cell locking, etc.).</td></tr>
+      </tbody>
+    </table>
+    <table data-lang="zh">
+      <thead><tr><th>方法</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>getMode()</code></td><td>返回 <code>'edit'</code> 或 <code>'readonly'</code>。</td></tr>
+        <tr><td><code>isEditable()</code></td><td>返回当前是否处于编辑模式。</td></tr>
+        <tr><td><code>setEditable()</code></td><td>切换到可编辑模式。移除只读遮罩。</td></tr>
+        <tr><td><code>setReadonly()</code></td><td>切换到只读模式。添加遮罩层。</td></tr>
+        <tr><td><code>setSheetProtection(sheetId, config)</code></td><td>设置工作表级保护规则（密码、单元格锁定等）。</td></tr>
+      </tbody>
+    </table>
+    <pre><span class="comment">// Toggle based on user role | 根据用户角色切换</span>
+<span class="keyword">if</span> (user.role === <span class="string">'viewer'</span>) {
+  sheet.permission.<span class="fn">setReadonly</span>()
+}
+
+<span class="comment">// Sheet protection | 工作表保护</span>
+sheet.permission.<span class="fn">setSheetProtection</span>(<span class="string">'sheet1'</span>, {
+  password: <span class="string">'secret'</span>,
+  selectLockedCells: <span class="keyword">true</span>,
+  formatCells: <span class="keyword">false</span>,
+  insertRows: <span class="keyword">false</span>,
+  deleteRows: <span class="keyword">false</span>,
+})</pre>
+
+    <!-- CollabAPI -->
+    <h2 id="collab-api">CollabAPI <span class="badge badge-sub">sheet.collab</span></h2>
+    <p data-lang="en">Real-time collaboration via Yjs + y-websocket. Uses cell-level sync for minimal latency.</p>
+    <p data-lang="zh">基于 Yjs + y-websocket 的实时协作。采用单元格级同步以实现最低延迟。</p>
+
+    <table data-lang="en">
+      <thead><tr><th>Method</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>connect(roomId)</code></td><td>Connect to a collaboration room.</td></tr>
+        <tr><td><code>disconnect()</code></td><td>Disconnect and cleanup resources.</td></tr>
+        <tr><td><code>getStatus()</code></td><td>Returns <code>'idle' | 'connecting' | 'connected' | 'disconnected'</code>.</td></tr>
+        <tr><td><code>getOnlineUsers()</code></td><td>Returns the list of online users <code>CollabUser[]</code>.</td></tr>
+        <tr><td><code>onStatusChange(cb)</code></td><td>Register callback for connection status changes.</td></tr>
+        <tr><td><code>onUsersChange(cb)</code></td><td>Register callback for online user list changes.</td></tr>
+        <tr><td><code>broadcastCursor(row, col, sheetId)</code></td><td>Broadcast cursor position to peers.</td></tr>
+        <tr><td><code>pushSnapshot(snapshot)</code></td><td>Manually push full snapshot to peers (e.g. after save).</td></tr>
+      </tbody>
+    </table>
+    <table data-lang="zh">
+      <thead><tr><th>方法</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>connect(roomId)</code></td><td>连接到协作房间。</td></tr>
+        <tr><td><code>disconnect()</code></td><td>断开连接并清理资源。</td></tr>
+        <tr><td><code>getStatus()</code></td><td>返回 <code>'idle' | 'connecting' | 'connected' | 'disconnected'</code>。</td></tr>
+        <tr><td><code>getOnlineUsers()</code></td><td>返回在线用户列表 <code>CollabUser[]</code>。</td></tr>
+        <tr><td><code>onStatusChange(cb)</code></td><td>注册连接状态变更回调。</td></tr>
+        <tr><td><code>onUsersChange(cb)</code></td><td>注册在线用户列表变更回调。</td></tr>
+        <tr><td><code>broadcastCursor(row, col, sheetId)</code></td><td>向对端广播光标位置。</td></tr>
+        <tr><td><code>pushSnapshot(snapshot)</code></td><td>手动推送完整快照到对端（例如保存后）。</td></tr>
+      </tbody>
+    </table>
+    <pre><span class="comment">// Connect to collaboration | 连接协作</span>
+<span class="keyword">await</span> sheet.collab.<span class="fn">connect</span>(<span class="string">'doc-123'</span>)
+
+sheet.<span class="fn">on</span>(<span class="string">'collab:users'</span>, (users) => {
+  console.log(<span class="string">'Online:'</span>, users.map(u => u.name))
+})
+
+sheet.<span class="fn">on</span>(<span class="string">'collab:status'</span>, (status) => {
+  console.log(<span class="string">'Connection:'</span>, status)
+})</pre>
+
+    <!-- Events -->
+    <h2 id="events" data-lang="en">Events <span class="badge badge-event">EventBus</span></h2>
+    <h2 data-lang="zh">事件 <span class="badge badge-event">EventBus</span></h2>
+
+    <table data-lang="en">
+      <thead><tr><th>Event</th><th>Payload</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>change</code></td><td><code>SheetSnapshot</code></td><td>Fired on any data modification.</td></tr>
+        <tr><td><code>save</code></td><td><code>SheetSnapshot</code></td><td>Fired after a successful save.</td></tr>
+        <tr><td><code>selection</code></td><td><code>SelectionEvent</code></td><td>Cell selection changed.</td></tr>
+        <tr><td><code>scroll</code></td><td><code>ScrollEvent</code></td><td>Viewport scrolled.</td></tr>
+        <tr><td><code>zoom</code></td><td><code>ZoomEvent</code></td><td>Zoom level changed.</td></tr>
+        <tr><td><code>tab:switch</code></td><td><code>TabSwitchEvent</code></td><td>Active sheet tab switched.</td></tr>
+        <tr><td><code>collab:status</code></td><td><code>CollabStatus</code></td><td>Connection status changed.</td></tr>
+        <tr><td><code>collab:users</code></td><td><code>CollabUser[]</code></td><td>Online user list updated.</td></tr>
+        <tr><td><code>collab:cursor</code></td><td><code>CollabCursor[]</code></td><td>Peer cursor positions changed.</td></tr>
+        <tr><td><code>permission:change</code></td><td><code>PermissionMode</code></td><td>Permission mode toggled.</td></tr>
+        <tr><td><code>error</code></td><td><code>Error</code></td><td>An error occurred.</td></tr>
+        <tr><td><code>ready</code></td><td><code>void</code></td><td>SDK fully initialized.</td></tr>
+        <tr><td><code>destroy</code></td><td><code>void</code></td><td>SDK destroyed.</td></tr>
+      </tbody>
+    </table>
+    <table data-lang="zh">
+      <thead><tr><th>事件</th><th>载荷</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>change</code></td><td><code>SheetSnapshot</code></td><td>任何数据修改时触发。</td></tr>
+        <tr><td><code>save</code></td><td><code>SheetSnapshot</code></td><td>保存成功后触发。</td></tr>
+        <tr><td><code>selection</code></td><td><code>SelectionEvent</code></td><td>单元格选区变更。</td></tr>
+        <tr><td><code>scroll</code></td><td><code>ScrollEvent</code></td><td>视口滚动。</td></tr>
+        <tr><td><code>zoom</code></td><td><code>ZoomEvent</code></td><td>缩放级别变更。</td></tr>
+        <tr><td><code>tab:switch</code></td><td><code>TabSwitchEvent</code></td><td>活动工作表标签切换。</td></tr>
+        <tr><td><code>collab:status</code></td><td><code>CollabStatus</code></td><td>连接状态变化。</td></tr>
+        <tr><td><code>collab:users</code></td><td><code>CollabUser[]</code></td><td>在线用户列表更新。</td></tr>
+        <tr><td><code>collab:cursor</code></td><td><code>CollabCursor[]</code></td><td>对端光标位置变化。</td></tr>
+        <tr><td><code>permission:change</code></td><td><code>PermissionMode</code></td><td>权限模式切换。</td></tr>
+        <tr><td><code>error</code></td><td><code>Error</code></td><td>发生错误。</td></tr>
+        <tr><td><code>ready</code></td><td><code>void</code></td><td>SDK 初始化完成。</td></tr>
+        <tr><td><code>destroy</code></td><td><code>void</code></td><td>SDK 已销毁。</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Types -->
+    <h2 id="types" data-lang="en">Types <span class="badge badge-type">TypeScript</span></h2>
+    <h2 data-lang="zh">类型定义 <span class="badge badge-type">TypeScript</span></h2>
+    <pre><span class="keyword">interface</span> <span class="type">SheetSnapshot</span> {
+  id?: string
+  name?: string
+  sheets: Record&lt;string, <span class="type">SheetData</span>&gt;
+  sheetOrder: string[]
+  styles?: Record&lt;string, any&gt;
+  resources?: any[]
+  drawings?: <span class="type">DrawingData</span>[]
+}
+
+<span class="keyword">interface</span> <span class="type">SheetData</span> {
+  id: string
+  name: string
+  cellData: Record&lt;number, Record&lt;number, <span class="type">CellData</span>&gt;&gt;
+  rowCount?: number
+  columnCount?: number
+  rowData?: Record&lt;number, { h?: number }&gt;
+  columnData?: Record&lt;number, { w?: number }&gt;
+  mergeData?: <span class="type">MergeRange</span>[]
+}
+
+<span class="keyword">interface</span> <span class="type">CellData</span> {
+  v?: any        <span class="comment">// Cell value</span>
+  f?: string     <span class="comment">// Formula</span>
+  s?: string | number  <span class="comment">// Style id</span>
+  t?: number     <span class="comment">// Cell type</span>
+  p?: any        <span class="comment">// Rich text paragraph</span>
+}
+
+<span class="keyword">interface</span> <span class="type">SheetInfo</span> {
+  id: string
+  name: string
+  index: number
+  isActive: boolean
+  rowCount: number
+  columnCount: number
+}
+
+<span class="keyword">interface</span> <span class="type">ProtectionConfig</span> {
+  password?: string
+  selectLockedCells?: boolean
+  formatCells?: boolean
+  insertRows?: boolean
+  deleteRows?: boolean
+  sort?: boolean
+  autoFilter?: boolean
+}
+
+<span class="keyword">interface</span> <span class="type">SelectionEvent</span> { row: number; col: number; sheetId: string }
+<span class="keyword">interface</span> <span class="type">ScrollEvent</span> { top: number; left: number; raw?: any }
+<span class="keyword">interface</span> <span class="type">ZoomEvent</span> { ratio: number }
+<span class="keyword">interface</span> <span class="type">TabSwitchEvent</span> { sheetId: string }
+
+<span class="keyword">interface</span> <span class="type">CollabUser</span> { userId: string; name: string; color: string; clientId: number }
+<span class="keyword">interface</span> <span class="type">CollabCursor</span> { clientId: number; userId: string; name: string; color: string; row: number; col: number; sheetId: string }
+
+<span class="keyword">type</span> <span class="type">PermissionMode</span> = <span class="string">'edit'</span> | <span class="string">'readonly'</span>
+<span class="keyword">type</span> <span class="type">CollabStatus</span> = <span class="string">'idle'</span> | <span class="string">'connecting'</span> | <span class="string">'connected'</span> | <span class="string">'disconnected'</span></pre>
+
+    <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 13px;">
+      <p>@jitword/sheet-sdk v0.1.0 — Built on <a href="https://jitword.com" style="color: var(--brand);">JitSheet</a></p>
+    </div>
+  </main>
+</div>
+
+<script>
+function setLang(lang) {
+  document.documentElement.lang = lang
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en')
+  document.getElementById('btn-zh').classList.toggle('active', lang === 'zh')
+  localStorage.setItem('sheet-sdk-docs-lang', lang)
+  // Toggle visibility: hide elements that don't match current lang
+  document.querySelectorAll('[data-lang]').forEach(function(el) {
+    if (el.getAttribute('data-lang') === lang) {
+      el.classList.remove('lang-hidden')
+    } else {
+      el.classList.add('lang-hidden')
+    }
+  })
+}
+
+// Auto-detect: check localStorage first, then browser language
+;(function() {
+  var saved = localStorage.getItem('sheet-sdk-docs-lang')
+  if (saved) { setLang(saved); return }
+  var browserLang = navigator.language || navigator.userLanguage || ''
+  setLang(browserLang.startsWith('zh') ? 'zh' : 'en')
+})()
+
+;(function loadGitHubStars() {
+  var starEl = document.getElementById('github-stars')
+  if (!starEl) return
+  fetch('https://api.github.com/repos/jitOffice/jitword-sdk')
+    .then(function(response) {
+      if (!response.ok) throw new Error('Failed to fetch GitHub stars')
+      return response.json()
+    })
+    .then(function(repo) {
+      var stars = repo.stargazers_count || 0
+      starEl.textContent = '★ ' + formatStars(stars)
+    })
+    .catch(function() {
+      starEl.textContent = '★ —'
+    })
+
+  function formatStars(count) {
+    if (count >= 1000) return (count / 1000).toFixed(count >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k'
+    return String(count)
+  }
+})()
+</script>
+</body>
+</html>
