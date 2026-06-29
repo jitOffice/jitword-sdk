@@ -4,8 +4,9 @@
 
 JitWord SDK 提供了一个简单的方式将强大的协同文档编辑器集成到您的 Web 应用中。支持 Vue、React、Angular 以及原生 HTML/JS 项目。
 
-1. AI协同Word文档：https://jitword.com
-2. 思维导图SDK：https://jitword.com/mind/doc
+1. AI协同 Word文档：https://jitword.com
+2. 思维导图 SDK：https://jitword.com/mind/doc
+3. 在线电子表格 SDK：https://jitword.com/sheet/docs
 
 
 ⚠️ 注：本项目**仅供个人或者非商业用途**使用，受 **GPL3.0** 协议控制，如需商用，请[**联系授权**](https://jitword.com/on-premise.html)。
