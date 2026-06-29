@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>@jitword/mind-sdk — XMind Style Demo</title>
+
+  <style>
+    :root {
+      --bg: #f3f4f7;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --line: #dfe3ea;
+      --line-soft: #eef1f5;
+      --text: #172033;
+      --muted: #6b7280;
+      --brand: #2f6fed;
+      --brand-soft: #eaf1ff;
+      --green: #16a34a;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --shadow: 0 14px 38px rgba(15, 23, 42, 0.10);
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      font-size: 13px;
+    }
+
+    button, input { font: inherit; }
+    button { border: 0; background: none; cursor: pointer; color: inherit; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .workspace {
+      height: 100%;
+      display: grid;
+      grid-template-rows: 38px 54px 1fr 28px;
+      background: var(--bg);
+    }
+
+    .titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 0 14px;
+      background: #fbfcfe;
+      border-bottom: 1px solid var(--line);
+    }
+    .title-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .traffic { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+    .traffic span { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .traffic span:nth-child(1) { background: #ff5f57; }
+    .traffic span:nth-child(2) { background: #ffbd2e; }
+    .traffic span:nth-child(3) { background: #28c840; }
+    .doc-title { font-weight: 700; color: #263244; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .title-actions { display: flex; align-items: center; gap: 8px; color: var(--muted); flex-shrink: 0; }
+    .pill-link, .product-trigger, .github-button {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 6px;
+      height: 26px; padding: 0 11px; border-radius: 999px;
+      background: var(--surface); border: 1px solid var(--line);
+      color: var(--text); text-decoration: none; font-weight: 650;
+      white-space: nowrap; line-height: 1;
+    }
+    .pill-link:hover, .product-trigger:hover, .github-button:hover { background: var(--surface-soft); border-color: #c9dcff; color: var(--brand); }
+    .product-trigger { align-items: center; }
+    .product-trigger::after {
+      content: "";
+      width: 6px; height: 6px;
+      border-right: 1.6px solid currentColor;
+      border-bottom: 1.6px solid currentColor;
+      transform: rotate(45deg) translateY(-1px);
+      transform-origin: center;
+      opacity: 0.62;
+      flex-shrink: 0;
+    }
+    .product-menu { width: 280px; }
+    .product-item {
+      display: grid;
+      gap: 3px;
+      padding: 10px 11px;
+      border-radius: 9px;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .product-item:hover { background: var(--surface-soft); }
+    .product-item strong { font-size: 13px; }
+    .product-item span { color: var(--muted); font-size: 12px; }
+    .github-icon { width: 14px; height: 14px; flex-shrink: 0; }
+    .github-stars { padding-left: 7px; margin-left: 1px; border-left: 1px solid var(--line); color: var(--muted); font-weight: 800; }
+    .github-stars.loading { font-weight: 650; }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+      z-index: 2;
+    }
+    .toolbar-left, .toolbar-right, .tool-group { display: flex; align-items: center; gap: 7px; }
+    .tool-group { padding-right: 8px; margin-right: 2px; border-right: 1px solid var(--line-soft); }
+    .tool-group:last-child { border-right: 0; margin-right: 0; padding-right: 0; }
+    .icon-btn, .text-btn, .dropdown-trigger, .file-btn {
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .icon-btn { width: 34px; font-size: 16px; }
+    .text-btn, .file-btn { padding: 0 10px; font-weight: 650; }
+    .icon-btn:hover, .text-btn:hover, .file-btn:hover { background: var(--surface-soft); border-color: var(--line); }
+    .text-btn.primary { color: #fff; background: var(--brand); border-color: var(--brand); }
+    .text-btn.primary:hover { background: #245ed0; }
+    .text-btn.active, .icon-btn.active { color: var(--brand); background: var(--brand-soft); border-color: #c9dcff; }
+    .text-btn.danger { color: var(--red); }
+    .dropdown-trigger {
+      min-width: 168px;
+      padding: 0 10px;
+      background: var(--surface-soft);
+      border-color: var(--line);
+      color: var(--text);
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 650;
+      line-height: 1;
+    }
+    .dropdown-trigger::after {
+      content: "";
+      width: 7px; height: 7px;
+      border-right: 1.7px solid currentColor;
+      border-bottom: 1.7px solid currentColor;
+      transform: rotate(45deg) translateY(-1px);
+      transform-origin: center;
+      opacity: 0.58;
+      flex-shrink: 0;
+    }
+    .dropdown {
+      position: relative;
+      display: inline-flex;
+    }
+    .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      z-index: 40;
+      width: 236px;
+      max-height: 320px;
+      overflow: auto;
+      padding: 7px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+      backdrop-filter: blur(14px);
+      display: none;
+    }
+    .dropdown.open .dropdown-menu { display: grid; gap: 3px; }
+    .dropdown-menu button {
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 7px 9px;
+      border-radius: 8px;
+      color: var(--text);
+      text-align: left;
+      font-weight: 650;
+    }
+    .dropdown-menu button:hover { background: var(--surface-soft); }
+    .dropdown-menu button.active { color: var(--brand); background: var(--brand-soft); }
+    .dropdown-menu small { color: var(--muted); font-weight: 600; }
+    .inspector .dropdown, .inspector .dropdown-trigger { width: 100%; }
+    .inspector .dropdown-menu { width: 100%; }
+    .file-btn { position: relative; overflow: hidden; }
+    .file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+    .main {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 260px minmax(360px, 1fr) 288px;
+      gap: 1px;
+      background: var(--line);
+    }
+    .sidebar, .inspector, .canvas-shell { min-height: 0; background: var(--surface); }
+    .sidebar, .inspector { display: flex; flex-direction: column; }
+    .panel-head {
+      height: 42px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--line-soft);
+      font-weight: 800;
+    }
+    .panel-body { padding: 12px; overflow: auto; min-height: 0; }
+
+    .project-card {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      gap: 12px;
+      align-items: center;
+      text-align: left;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      margin-bottom: 9px;
+      background: transparent;
+      transition: transform 0.15s, background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .project-card:hover { background: var(--surface-soft); transform: translateY(-1px); }
+    .project-card.active { background: var(--brand-soft); border-color: #c9dcff; box-shadow: inset 0 0 0 1px rgba(47, 111, 237, 0.08); }
+    .project-icon {
+      width: 52px; height: 52px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 0;
+      background: linear-gradient(135deg, #dbeafe, #eff6ff);
+      color: var(--brand);
+      box-shadow: 0 10px 22px rgba(47, 111, 237, 0.16);
+      flex-shrink: 0;
+      place-self: center;
+    }
+    .project-card:nth-of-type(2) .project-icon { background: linear-gradient(135deg, #dcfce7, #f0fdf4); color: #16a34a; box-shadow: 0 10px 22px rgba(22, 163, 74, 0.14); }
+    .project-card:nth-of-type(3) .project-icon { background: linear-gradient(135deg, #fef3c7, #fffbeb); color: #d97706; box-shadow: 0 10px 22px rgba(217, 119, 6, 0.14); }
+    .project-icon svg { width: 28px; height: 28px; stroke-width: 1.8; display: block; }
+    .project-card strong { display: block; font-size: 14px; }
+    .project-content { display: block; min-width: 0; }
+    .project-content span { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); line-height: 1.42; }
+
+    .outline { margin-top: 12px; border-top: 1px solid var(--line-soft); padding-top: 12px; }
+    .outline-title { color: var(--muted); font-size: 12px; font-weight: 800; margin-bottom: 8px; }
+    .outline ul { list-style: none; display: grid; gap: 4px; }
+    .outline li {
+      padding: 5px 8px;
+      border-radius: 7px;
+      color: #334155;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .outline li.child { padding-left: 20px; color: var(--muted); }
+    .outline li:hover { background: var(--surface-soft); }
+
+    .canvas-shell {
+      display: grid;
+      grid-template-rows: 38px 1fr;
+      position: relative;
+    }
+    .canvas-tabs {
+      display: flex;
+      align-items: end;
+      gap: 6px;
+      padding: 6px 10px 0;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .tab {
+      height: 32px;
+      min-width: 116px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-bottom: 0;
+      border-radius: 9px 9px 0 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface);
+      font-weight: 750;
+      color: #263244;
+    }
+    .tab.add { min-width: 34px; color: var(--muted); }
+    .canvas-stage {
+      min-height: 0;
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(#f0f3f8 1px, transparent 1px),
+        linear-gradient(90deg, #f0f3f8 1px, transparent 1px),
+        #ffffff;
+      background-size: 24px 24px;
+    }
+    #mindmap-container {
+      position: absolute;
+      inset: 0;
+      min-width: 100%;
+      min-height: 100%;
+      background: transparent;
+    }
+    .canvas-tip {
+      position: absolute;
+      left: 18px;
+      bottom: 18px;
+      max-width: 360px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--line);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.10);
+      color: var(--muted);
+      pointer-events: none;
+      backdrop-filter: blur(10px);
+    }
+    .canvas-tip strong { color: var(--text); }
+
+    .property-section { padding: 12px 0; border-bottom: 1px solid var(--line-soft); }
+    .property-section:first-child { padding-top: 0; }
+    .property-section:last-child { border-bottom: 0; }
+    .property-section h3 { font-size: 13px; margin-bottom: 10px; }
+    .field { display: grid; gap: 6px; margin-bottom: 10px; color: var(--muted); font-size: 12px; font-weight: 750; }
+    .field .dropdown-trigger {
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-soft);
+      padding: 0 9px;
+      color: var(--text);
+    }
+    .segmented { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .segmented button {
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--surface-soft);
+      font-weight: 750;
+    }
+    .segmented button.active { color: var(--brand); background: var(--brand-soft); border-color: #c9dcff; }
+    .color-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .color-box { display: grid; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 750; }
+    .color-box input {
+      width: 100%; height: 34px;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-soft);
+    }
+    .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .stat {
+      padding: 10px 8px;
+      border: 1px solid var(--line-soft);
+      border-radius: 10px;
+      background: var(--surface-soft);
+      text-align: center;
+    }
+    .stat strong { display: block; font-size: 18px; line-height: 1; }
+    .stat span { display: block; color: var(--muted); font-size: 11px; margin-top: 6px; }
+    .log-list { display: grid; gap: 7px; max-height: 168px; overflow: auto; }
+    .log-item {
+      padding: 8px 9px;
+      border-radius: 9px;
+      background: var(--surface-soft);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .log-item strong { color: var(--text); }
+
+    .statusbar {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 0 12px;
+      background: #fbfcfe;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .status-item { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .status-message { margin-left: auto; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dot { width: 7px; height: 7px; border-radius: 999px; background: var(--green); }
+    .dot.warning { background: var(--yellow); }
+    .dot.danger { background: var(--red); }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      top: 104px;
+      z-index: 80;
+      min-width: 240px;
+      max-width: 360px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+      color: var(--text);
+      font-weight: 700;
+      transform: translateY(-8px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s, transform 0.18s;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.error { border-color: rgba(239, 68, 68, 0.24); color: var(--red); }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 70;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(15, 23, 42, 0.34);
+      backdrop-filter: blur(8px);
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-card {
+      width: min(420px, 100%);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.72);
+      background: #fff;
+      box-shadow: 0 26px 70px rgba(15, 23, 42, 0.28);
+      overflow: hidden;
+    }
+    .modal-head { padding: 18px 18px 8px; }
+    .modal-head h3 { font-size: 18px; margin-bottom: 6px; }
+    .modal-head p { color: var(--muted); line-height: 1.6; }
+    .modal-body { padding: 10px 18px 18px; }
+    .modal-input {
+      width: 100%;
+      height: 40px;
+      padding: 0 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--surface-soft);
+      outline: none;
+      color: var(--text);
+    }
+    .modal-input:focus { border-color: #9bbcff; box-shadow: 0 0 0 4px rgba(47, 111, 237, 0.10); }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 12px 18px 18px;
+      background: #fbfcfe;
+      border-top: 1px solid var(--line-soft);
+    }
+    .modal-btn {
+      height: 34px;
+      padding: 0 14px;
+      border-radius: 9px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font-weight: 750;
+    }
+    .modal-btn.primary { color: #fff; background: var(--brand); border-color: var(--brand); }
+    .modal-btn.danger { color: #fff; background: var(--red); border-color: var(--red); }
+
+    @media (max-width: 1120px) {
+      .main { grid-template-columns: 230px minmax(320px, 1fr); }
+      .inspector { display: none; }
+    }
+    @media (max-width: 820px) {
+      .titlebar { overflow-x: auto; }
+      .doc-title { max-width: 180px; }
+      .toolbar { overflow-x: auto; align-items: stretch; }
+      .main { grid-template-columns: 220px minmax(320px, 1fr); }
+      .workspace { grid-template-rows: 38px 54px 1fr 28px; }
+      .project-card { grid-template-columns: 46px 1fr; padding: 10px; }
+      .project-icon { width: 46px; height: 46px; border-radius: 14px; }
+      .project-icon svg { width: 25px; height: 25px; }
+    }
+    @media (max-width: 640px) {
+      .main { grid-template-columns: 190px minmax(280px, 1fr); overflow-x: auto; }
+      .project-card { grid-template-columns: 42px 1fr; gap: 9px; }
+      .project-icon { width: 42px; height: 42px; }
+      .project-content span { font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="workspace">
+    <header class="titlebar">
+      <div class="title-left">
+        <div class="traffic"><span></span><span></span><span></span></div>
+        <div class="dropdown product-dropdown" id="product-dropdown">
+          <button class="product-trigger" onclick="toggleProductMenu()">产品矩阵</button>
+          <div class="dropdown-menu product-menu">
+            <a class="product-item" href="https://jitword.com" target="_blank" rel="noopener noreferrer"><strong>jitword协同AI文档</strong><span>https://jitword.com</span></a>
+            <a class="product-item" href="https://pxcharts.turntip.cn" target="_blank" rel="noopener noreferrer"><strong>pxcharts多维表格</strong><span>https://pxcharts.turntip.cn</span></a>
+            <a class="product-item" href="https://know.jitword.com" target="_blank" rel="noopener noreferrer"><strong>AI知识库</strong><span>https://know.jitword.com</span></a>
+          </div>
+        </div>
+        <div class="doc-title">JitMind SDK Demo.xmind</div>
+      </div>
+      <div class="title-actions">
+        <span id="save-state">已保存</span>
+        <a class="pill-link" href="https://jitword.com/mind-sdk.html" target="_blank" rel="noopener noreferrer">API 文档</a>
+        <a class="github-button" href="https://github.com/jitOffice/jitword-sdk" target="_blank" rel="noopener noreferrer" aria-label="打开 GitHub 仓库">
+          <svg class="github-icon" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65 0 0 1 8 3.86c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" /></svg>
+          GitHub<span class="github-stars loading" id="github-stars">★ --</span>
+        </a>
+      </div>
+    </header>
+
+    <nav class="toolbar" aria-label="编辑工具栏">
+      <div class="toolbar-left">
+        <div class="tool-group">
+          <button class="text-btn primary" onclick="handleAddChild()">子主题</button>
+          <button class="text-btn" onclick="handleAddSibling()">同级主题</button>
+          <button class="icon-btn" title="重命名" onclick="handleRename()">✎</button>
+          <button class="icon-btn" title="删除" onclick="handleDelete()">⌫</button>
+        </div>
+        <div class="tool-group">
+          <button class="text-btn" onclick="handleDirection('side')" id="btn-dir-side">平衡图</button>
+          <button class="text-btn" onclick="handleDirection('right')" id="btn-dir-right">向右</button>
+          <button class="text-btn" onclick="handleDirection('left')" id="btn-dir-left">向左</button>
+        </div>
+        <div class="tool-group">
+          <div class="dropdown" id="theme-dropdown-main">
+            <button class="dropdown-trigger" id="theme-trigger" onclick="toggleThemeMenu('main')">Classic</button>
+            <div class="dropdown-menu" id="theme-menu"></div>
+          </div>
+          <button class="text-btn" onclick="handleResetStyle()">重置样式</button>
+        </div>
+      </div>
+      <div class="toolbar-right">
+        <div class="tool-group">
+          <button class="text-btn" onclick="handleToggleReadonly()" id="btn-readonly">编辑</button>
+          <button class="text-btn" onclick="handleExportPng()">PNG</button>
+          <button class="text-btn" onclick="handleExportPdf()">PDF</button>
+          <button class="text-btn" onclick="handleExportXMind()">XMind</button>
+          <button class="text-btn" onclick="handleExportJson()">JSON</button>
+          <label class="file-btn">导入<input type="file" accept=".json,application/json" onchange="handleImportJson(event)" /></label>
+        </div>
+      </div>
+    </nav>
+
+    <main class="main">
+      <aside class="sidebar">
+        <div class="panel-head"><span>工作簿</span><span style="color: var(--muted);">⌘1</span></div>
+        <div class="panel-body">
+          <button class="project-card active" id="scenario-product" onclick="applyScenario('product')">
+            <span class="project-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h7v10H4z"/><path d="M15 5h5v6h-5z"/><path d="M15 15h5v4h-5z"/><path d="M11 12h4"/></svg></span><span class="project-content"><strong>产品路线图</strong><span>展示 SDK 能力、交付路径与业务价值。</span></span>
+          </button>
+          <button class="project-card" id="scenario-meeting" onclick="applyScenario('meeting')">
+            <span class="project-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 5h12"/><path d="M6 10h12"/><path d="M6 15h8"/><path d="M6 20h5"/><path d="M4 5h.01"/><path d="M4 10h.01"/><path d="M4 15h.01"/><path d="M4 20h.01"/></svg></span><span class="project-content"><strong>会议纪要</strong><span>把议题、结论和行动项结构化。</span></span>
+          </button>
+          <button class="project-card" id="scenario-project" onclick="applyScenario('project')">
+            <span class="project-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h6v6H4z"/><path d="M14 4h6v6h-6z"/><path d="M14 14h6v6h-6z"/><path d="M10 9h4"/><path d="M17 10v4"/></svg></span><span class="project-content"><strong>项目拆解</strong><span>呈现里程碑、风险与交付物。</span></span>
+          </button>
+
+          <div class="outline">
+            <div class="outline-title">大纲</div>
+            <ul id="outline-list"></ul>
+          </div>
+        </div>
+      </aside>
+
+      <section class="canvas-shell">
+        <div class="canvas-tabs">
+          <div class="tab" id="sheet-tab">产品路线图</div>
+          <button class="tab add" onclick="createBlankCanvas()" title="新建空白画布">+</button>
+        </div>
+        <div class="canvas-stage">
+          <div id="mindmap-container"></div>
+          <div class="canvas-tip"><strong>操作提示</strong>：点击脑图节点后，可使用顶部工具栏新增主题、切换结构、修改样式或导出文件。</div>
+        </div>
+      </section>
+
+      <aside class="inspector">
+        <div class="panel-head"><span>格式</span><span style="color: var(--muted);">检查器</span></div>
+        <div class="panel-body">
+          <section class="property-section">
+            <h3>结构</h3>
+            <div class="field">布局
+              <div class="segmented">
+                <button id="seg-side" onclick="handleDirection('side')">平衡</button>
+                <button id="seg-right" onclick="handleDirection('right')">向右</button>
+                <button id="seg-left" onclick="handleDirection('left')">向左</button>
+              </div>
+            </div>
+            <div class="field">主题
+              <div class="dropdown" id="theme-dropdown-side">
+                <button class="dropdown-trigger" id="theme-trigger-side" onclick="toggleThemeMenu('side')">Classic</button>
+                <div class="dropdown-menu" id="theme-menu-side"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="property-section">
+            <h3>样式</h3>
+            <div class="color-grid">
+              <label class="color-box">文字<input type="color" id="node-color" value="#172033" onchange="handleNodeColor(event)" /></label>
+              <label class="color-box">填充<input type="color" id="node-bg" value="#eaf1ff" onchange="handleNodeBg(event)" /></label>
+              <label class="color-box">分支<input type="color" id="branch-color" value="#2f6fed" onchange="handleBranchColor(event)" /></label>
+            </div>
+          </section>
+
+          <section class="property-section">
+            <h3>统计</h3>
+            <div class="stat-grid">
+              <div class="stat"><strong id="metric-nodes">—</strong><span>节点</span></div>
+              <div class="stat"><strong id="metric-depth">—</strong><span>层级</span></div>
+              <div class="stat"><strong id="metric-leaves">—</strong><span>叶子</span></div>
+            </div>
+          </section>
+
+          <section class="property-section">
+            <h3>最近操作</h3>
+            <div class="log-list" id="activity-log"></div>
+          </section>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="statusbar">
+      <span class="status-item"><span class="dot" id="sdk-dot"></span><span id="sdk-status">SDK 初始化中</span></span>
+      <span class="status-item" id="status-selection">选中：根节点</span>
+      <span class="status-item" id="status-nodes">节点：—</span>
+      <span class="status-item" id="status-mode">模式：编辑</span>
+      <span class="status-message" id="status-msg">正在加载画布...</span>
+    </footer>
+  </div>
+
+  <div class="toast" id="app-toast" role="status" aria-live="polite"></div>
+  <div class="modal-backdrop" id="app-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="modal-title">输入内容</h3>
+        <p id="modal-desc">请输入内容后继续。</p>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <input class="modal-input" id="modal-input" type="text" />
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn" id="modal-cancel" onclick="closeModal(false)">取消</button>
+        <button class="modal-btn primary" id="modal-confirm" onclick="closeModal(true)">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if (typeof window.process === 'undefined') {
+      window.process = { env: { NODE_ENV: 'production' }, versions: { node: '' }, nextTick: function(fn) { setTimeout(fn, 0) }, browser: true };
+    }
+  </script>
+  <script src="./lib/jit-mind.full.js"></script>
+
+  <script>
+    var JitMind = window.JitMind.JitMind
+    var mindmap = null
+    var selectedNodeId = 'root'
+    var currentDirection = 'side'
+    var isReadonly = false
+    var currentScenario = 'product'
+    var currentTheme = 'Classic'
+    var modalState = null
+    var toastTimer = null
+    var scenarioLabels = { product: '产品路线图', meeting: '会议纪要', project: '项目拆解' }
+
+    var scenarioRoots = {
+      product: {
+        id: 'root', topic: 'JitMind SDK 能力地图', root: true,
+        children: [
+          { id: 'product-embed', topic: '快速集成', children: [
+            { id: 'product-umd', topic: 'UMD 完整包' },
+            { id: 'product-api', topic: 'Facade API' },
+            { id: 'product-i18n', topic: '中文/英文界面' }
+          ]},
+          { id: 'product-edit', topic: '编辑体验', children: [
+            { id: 'product-crud', topic: '节点增删改查' },
+            { id: 'product-style', topic: '节点与分支样式' },
+            { id: 'product-layout', topic: '平衡/左/右结构' }
+          ]},
+          { id: 'product-output', topic: '导入导出', children: [
+            { id: 'product-png', topic: 'PNG/PDF 汇报' },
+            { id: 'product-xmind', topic: 'XMind 文件流转' },
+            { id: 'product-json', topic: 'JSON 数据存档' }
+          ]},
+          { id: 'product-value', topic: '业务价值', children: [
+            { id: 'product-local', topic: '可本地部署' },
+            { id: 'product-permission', topic: '权限控制' },
+            { id: 'product-events', topic: '事件驱动集成' }
+          ]}
+        ]
+      },
+      meeting: {
+        id: 'root', topic: '季度复盘会议', root: true,
+        children: [
+          { id: 'meeting-agenda', topic: '议程', children: [
+            { id: 'meeting-growth', topic: '增长目标' },
+            { id: 'meeting-risk', topic: '风险同步' },
+            { id: 'meeting-roadmap', topic: '下季度规划' }
+          ]},
+          { id: 'meeting-decision', topic: '结论', children: [
+            { id: 'meeting-demo', topic: '优化 Demo 体验' },
+            { id: 'meeting-docs', topic: '完善文档入口' },
+            { id: 'meeting-sdk', topic: '强化 SDK 输出能力' }
+          ]},
+          { id: 'meeting-action', topic: '行动项', children: [
+            { id: 'meeting-owner', topic: '明确负责人' },
+            { id: 'meeting-date', topic: '设定验收时间' },
+            { id: 'meeting-review', topic: '每周同步进展' }
+          ]}
+        ]
+      },
+      project: {
+        id: 'root', topic: '知识库可视化项目', root: true,
+        children: [
+          { id: 'project-scope', topic: '范围定义', children: [
+            { id: 'project-user', topic: '用户画像' },
+            { id: 'project-feature', topic: '功能边界' },
+            { id: 'project-success', topic: '成功指标' }
+          ]},
+          { id: 'project-plan', topic: '计划', children: [
+            { id: 'project-week1', topic: '第 1 周：原型验证' },
+            { id: 'project-week2', topic: '第 2 周：SDK 集成' },
+            { id: 'project-week3', topic: '第 3 周：上线验收' }
+          ]},
+          { id: 'project-risk', topic: '风险', children: [
+            { id: 'project-data', topic: '数据兼容' },
+            { id: 'project-perf', topic: '大图性能' },
+            { id: 'project-auth', topic: '权限边界' }
+          ]},
+          { id: 'project-delivery', topic: '交付物', children: [
+            { id: 'project-demo', topic: '可交互 Demo' },
+            { id: 'project-guide', topic: '接入指南' },
+            { id: 'project-report', topic: '验收报告' }
+          ]}
+        ]
+      }
+    }
+
+    bootstrap()
+    loadGitHubStars()
+    document.addEventListener('click', function(event) {
+      if (!event.target.closest('.dropdown')) closeThemeMenus()
+    })
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeThemeMenus()
+        closeModal(false)
+      }
+      if (event.key === 'Enter' && document.getElementById('app-modal').classList.contains('open')) {
+        closeModal(true)
+      }
+    })
+
+    function bootstrap() {
+      mindmap = new JitMind({
+        container: '#mindmap-container',
+        locale: 'zh_CN',
+        editable: true,
+        direction: currentDirection,
+        onChange: function(data) { updateDocumentState(data) },
+      })
+      mindmap.init().then(function() {
+        wireEvents()
+        populateThemes()
+        loadScenario('product')
+        updateModeUI()
+        setSdkStatus('ready')
+        setStatus('画布已就绪，点击节点后即可编辑')
+        addLog('系统', 'SDK 初始化完成')
+      }).catch(function(error) {
+        setSdkStatus('error')
+        setStatus('SDK 初始化失败：' + error.message)
+        addLog('错误', error.message)
+      })
+    }
+
+    function makeScenarioData(name) {
+      var root = cloneData(scenarioRoots[name] || scenarioRoots.product)
+      var data = window.JitMind.createDefaultMindmapData
+        ? window.JitMind.createDefaultMindmapData('zh_CN')
+        : { nodeData: root, linkData: {}, direction: 1 }
+      data.nodeData = root
+      data.linkData = data.linkData || {}
+      data.direction = directionToNumber(currentDirection)
+      return data
+    }
+
+    function loadScenario(name) {
+      currentScenario = name
+      selectedNodeId = 'root'
+      var data = makeScenarioData(name)
+      mindmap.data.setData(data)
+      currentTheme = currentTheme || 'Classic'
+      applyThemeIfAvailable(currentTheme)
+      updateScenarioUI(name)
+      updateDocumentState(mindmap.data.getData())
+    }
+
+    function createBlankMindmapData() {
+      var data = window.JitMind.createDefaultMindmapData
+        ? window.JitMind.createDefaultMindmapData('zh_CN')
+        : { nodeData: {}, linkData: {}, direction: 1 }
+      data.nodeData = { id: 'root', topic: '中心主题', root: true, children: [] }
+      data.linkData = data.linkData || {}
+      data.direction = directionToNumber(currentDirection)
+      return data
+    }
+
+    function createBlankCanvas() {
+      selectedNodeId = 'root'
+      currentScenario = 'blank'
+      var data = createBlankMindmapData()
+      mindmap.data.setData(data)
+      document.querySelectorAll('.project-card.active').forEach(function(card) {
+        card.classList.remove('active')
+      })
+      document.getElementById('sheet-tab').textContent = '空白画布'
+      document.getElementById('status-selection').textContent = '选中：根节点'
+      updateDocumentState(mindmap.data.getData())
+      setStatus('已新建空白画布')
+      addLog('新建画布', '空白画布')
+    }
+
+    function wireEvents() {
+      mindmap.on('node:select', function(node) {
+        selectedNodeId = node.id
+        document.getElementById('status-selection').textContent = '选中：' + node.topic
+        addLog('选中', node.topic)
+      })
+      mindmap.on('node:deselect', function() {
+        selectedNodeId = 'root'
+        document.getElementById('status-selection').textContent = '选中：根节点'
+      })
+      mindmap.on('permission:change', function(mode) {
+        isReadonly = mode === 'readonly'
+        updateModeUI()
+      })
+    }
+
+    function populateThemes() {
+      var mainMenu = document.getElementById('theme-menu')
+      var sideMenu = document.getElementById('theme-menu-side')
+      var themes = mindmap.theme.listThemes()
+      mainMenu.innerHTML = ''
+      sideMenu.innerHTML = ''
+      themes.forEach(function(theme) {
+        mainMenu.appendChild(createThemeOption(theme, 'main'))
+        sideMenu.appendChild(createThemeOption(theme, 'side'))
+      })
+      syncThemeTriggers()
+    }
+
+    function applyScenario(name) {
+      if (!scenarioRoots[name]) return
+      loadScenario(name)
+      setStatus('已切换工作簿：' + scenarioLabels[name])
+      addLog('切换工作簿', scenarioLabels[name])
+    }
+
+    function updateScenarioUI(name) {
+      Object.keys(scenarioLabels).forEach(function(key) {
+        var el = document.getElementById('scenario-' + key)
+        if (el) el.classList.toggle('active', key === name)
+      })
+      document.getElementById('sheet-tab').textContent = scenarioLabels[name]
+      renderOutline(scenarioRoots[name])
+    }
+
+    function handleAddChild() {
+      if (guardReadonly()) return
+      openTextDialog({
+        title: '添加子主题',
+        desc: '将在当前选中主题下创建一个新的子主题。',
+        value: '新的子主题',
+        confirmText: '添加',
+        onConfirm: function(topic) {
+          mindmap.data.addChild(selectedNodeId, topic)
+          setStatus('已添加子主题：' + topic)
+          addLog('添加子主题', topic)
+        }
+      })
+    }
+
+    function handleAddSibling() {
+      if (guardReadonly()) return
+      if (selectedNodeId === 'root') { showToast('根主题不能添加同级，请先选择一个分支主题。', 'error'); return }
+      openTextDialog({
+        title: '添加同级主题',
+        desc: '将在当前选中主题旁边创建一个新的同级主题。',
+        value: '新的同级主题',
+        confirmText: '添加',
+        onConfirm: function(topic) {
+          mindmap.data.addSibling(selectedNodeId, topic)
+          setStatus('已添加同级主题：' + topic)
+          addLog('添加同级主题', topic)
+        }
+      })
+    }
+
+    function handleRename() {
+      if (guardReadonly()) return
+      var current = mindmap.data.getNode(selectedNodeId)
+      openTextDialog({
+        title: '重命名主题',
+        desc: '更新当前选中主题的显示名称。',
+        value: current ? current.topic : '',
+        confirmText: '保存',
+        onConfirm: function(topic) {
+          if (typeof mindmap.data.updateNodeTopic === 'function') {
+            mindmap.data.updateNodeTopic(selectedNodeId, topic)
+          } else if (current) {
+            current.topic = topic
+            mindmap.data.setData(mindmap.data.getData())
+          }
+          setStatus('已重命名：' + topic)
+          addLog('重命名', topic)
+        }
+      })
+    }
+
+    function handleDelete() {
+      if (guardReadonly()) return
+      if (selectedNodeId === 'root') { showToast('根主题不能删除。', 'error'); return }
+      openConfirmDialog({
+        title: '删除当前主题？',
+        desc: '将删除当前选中主题及其所有子主题，此操作不可撤销。',
+        confirmText: '删除',
+        danger: true,
+        onConfirm: function() {
+          mindmap.data.removeNode(selectedNodeId)
+          selectedNodeId = 'root'
+          document.getElementById('status-selection').textContent = '选中：根节点'
+          setStatus('主题已删除')
+          addLog('删除主题', '已回到根节点')
+        }
+      })
+    }
+
+    function handleDirection(direction) {
+      if (direction === currentDirection) return
+      currentDirection = direction
+      var data = mindmap.data.getData()
+      data.direction = directionToNumber(direction)
+      mindmap.destroy()
+      mindmap = new JitMind({
+        container: '#mindmap-container',
+        locale: 'zh_CN',
+        editable: !isReadonly,
+        direction: currentDirection,
+        onChange: function(updatedData) { updateDocumentState(updatedData) },
+      })
+      mindmap.init().then(function() {
+        wireEvents()
+        populateThemes()
+        mindmap.data.setData(data)
+        applyThemeIfAvailable(currentTheme)
+        updateModeUI()
+        updateDocumentState(mindmap.data.getData())
+        setStatus('已切换结构：' + directionLabel(direction))
+        addLog('切换结构', directionLabel(direction))
+      }).catch(function(error) {
+        setStatus('切换结构失败：' + error.message)
+        addLog('错误', error.message)
+      })
+    }
+
+    function handleToggleReadonly() {
+      if (isReadonly) {
+        mindmap.permission.setEditable()
+        setStatus('已切换为编辑模式')
+        addLog('权限', '编辑模式')
+      } else {
+        mindmap.permission.setReadonly()
+        setStatus('已切换为只读模式')
+        addLog('权限', '只读模式')
+      }
+    }
+
+    function handleThemeChange(themeName) {
+      currentTheme = typeof themeName === 'string' ? themeName : themeName.target.value
+      applyThemeIfAvailable(currentTheme)
+      closeThemeMenus()
+      setStatus('已应用主题：' + currentTheme)
+      addLog('主题', currentTheme)
+    }
+
+    function handleNodeColor(event) {
+      if (guardReadonly()) return
+      mindmap.data.patchNodeStyle({ color: event.target.value })
+      setStatus('已设置文字颜色')
+      addLog('样式', '文字 ' + event.target.value)
+    }
+
+    function handleNodeBg(event) {
+      if (guardReadonly()) return
+      mindmap.data.patchNodeStyle({ background: event.target.value })
+      setStatus('已设置填充颜色')
+      addLog('样式', '填充 ' + event.target.value)
+    }
+
+    function handleBranchColor(event) {
+      if (guardReadonly()) return
+      mindmap.data.setBranchColor(event.target.value)
+      setStatus('已设置分支颜色')
+      addLog('样式', '分支 ' + event.target.value)
+    }
+
+    function handleResetStyle() {
+      if (guardReadonly()) return
+      mindmap.data.resetNodeStyle()
+      setStatus('已重置样式')
+      addLog('样式', '重置')
+    }
+
+    function handleExportPng() {
+      mindmap.io.exportPng({ name: 'jitmind-demo' })
+      setStatus('已导出 PNG')
+      addLog('导出', 'PNG')
+    }
+
+    function handleExportPdf() {
+      mindmap.io.exportPdf({ name: 'jitmind-demo' })
+      setStatus('已导出 PDF')
+      addLog('导出', 'PDF')
+    }
+
+    function handleExportXMind() {
+      mindmap.io.exportXMind({ name: 'jitmind-demo' })
+      setStatus('已导出 XMind')
+      addLog('导出', 'XMind')
+    }
+
+    function handleExportJson() {
+      mindmap.io.exportJson({ download: true, name: 'jitmind-demo' })
+      setStatus('已导出 JSON')
+      addLog('导出', 'JSON')
+    }
+
+    function handleImportJson(event) {
+      var file = event.target.files && event.target.files[0]
+      if (!file) return
+      mindmap.io.importJsonFromFile(file).then(function(data) {
+        mindmap.data.setData(data)
+        updateDocumentState(data)
+        setStatus('已导入：' + file.name)
+        addLog('导入', file.name)
+      }).catch(function(error) {
+        showToast('导入失败：' + error.message, 'error')
+        addLog('导入失败', error.message)
+      })
+      event.target.value = ''
+    }
+
+    function focusRootAndGuide() {
+      selectedNodeId = 'root'
+      setStatus('可先点击画布中的任意节点，再使用顶部工具栏编辑')
+      addLog('提示', '选择节点后开始编辑')
+    }
+
+    function applyThemeIfAvailable(themeName) {
+      var themes = mindmap.theme.listThemes().map(function(theme) { return theme.name })
+      if (themes.indexOf(themeName) === -1) themeName = themes[0]
+      currentTheme = themeName
+      mindmap.theme.setTheme(themeName)
+      syncThemeTriggers()
+    }
+
+    function updateDocumentState(data) {
+      var nodeData = normalizeNodeData(data)
+      var stats = getTreeStats(nodeData, 1)
+      document.getElementById('metric-nodes').textContent = stats.nodes
+      document.getElementById('metric-depth').textContent = stats.depth
+      document.getElementById('metric-leaves').textContent = stats.leaves
+      document.getElementById('status-nodes').textContent = '节点：' + stats.nodes
+      document.getElementById('save-state').textContent = '已保存'
+      renderOutline(nodeData)
+    }
+
+    function renderOutline(root) {
+      var list = document.getElementById('outline-list')
+      list.innerHTML = ''
+      if (!root) return
+      appendOutlineItem(list, root.topic, false)
+      ;(root.children || []).forEach(function(child) {
+        appendOutlineItem(list, child.topic, false)
+        ;(child.children || []).slice(0, 4).forEach(function(grandChild) {
+          appendOutlineItem(list, grandChild.topic, true)
+        })
+      })
+    }
+
+    function appendOutlineItem(list, topic, isChild) {
+      var item = document.createElement('li')
+      item.className = isChild ? 'child' : ''
+      item.textContent = (isChild ? '└ ' : '') + topic
+      list.appendChild(item)
+    }
+
+    function updateModeUI() {
+      var readonlyButton = document.getElementById('btn-readonly')
+      readonlyButton.textContent = isReadonly ? '只读' : '编辑'
+      readonlyButton.classList.toggle('active', isReadonly)
+      document.getElementById('status-mode').textContent = '模式：' + (isReadonly ? '只读' : '编辑')
+      syncDirectionButtons()
+    }
+
+    function syncDirectionButtons() {
+      var isSide = currentDirection === 'side'
+      var isRight = currentDirection === 'right'
+      var isLeft = currentDirection === 'left'
+      document.getElementById('btn-dir-side').classList.toggle('active', isSide)
+      document.getElementById('btn-dir-right').classList.toggle('active', isRight)
+      document.getElementById('btn-dir-left').classList.toggle('active', isLeft)
+      document.getElementById('seg-side').classList.toggle('active', isSide)
+      document.getElementById('seg-right').classList.toggle('active', isRight)
+      document.getElementById('seg-left').classList.toggle('active', isLeft)
+    }
+
+    function setSdkStatus(status) {
+      var dot = document.getElementById('sdk-dot')
+      var text = document.getElementById('sdk-status')
+      dot.className = 'dot' + (status === 'error' ? ' danger' : '')
+      text.textContent = status === 'ready' ? 'SDK 就绪' : status === 'error' ? 'SDK 异常' : 'SDK 初始化中'
+    }
+
+    function guardReadonly() {
+      if (!isReadonly) return false
+      setStatus('当前为只读模式，请先切换为编辑')
+      showToast('当前为只读模式，请先切换为编辑。', 'error')
+      addLog('受限', '只读模式不可编辑')
+      return true
+    }
+
+    function getTreeStats(node, depth) {
+      if (!node) return { nodes: 0, depth: 0, leaves: 0 }
+      var stats = { nodes: 1, depth: depth, leaves: node.children && node.children.length ? 0 : 1 }
+      ;(node.children || []).forEach(function(child) {
+        var childStats = getTreeStats(child, depth + 1)
+        stats.nodes += childStats.nodes
+        stats.depth = Math.max(stats.depth, childStats.depth)
+        stats.leaves += childStats.leaves
+      })
+      return stats
+    }
+
+    function normalizeNodeData(data) {
+      if (!data) return null
+      return data.nodeData || data
+    }
+
+    function directionToNumber(direction) {
+      return { right: 0, side: 1, left: 2 }[direction] || 1
+    }
+
+    function directionLabel(direction) {
+      return { right: '向右', side: '平衡图', left: '向左' }[direction] || '平衡图'
+    }
+
+    function createThemeOption(theme) {
+      var button = document.createElement('button')
+      var label = document.createElement('span')
+      var meta = document.createElement('small')
+      label.textContent = theme.name
+      meta.textContent = theme.label || ''
+      button.type = 'button'
+      button.dataset.theme = theme.name
+      button.appendChild(label)
+      button.appendChild(meta)
+      button.onclick = function() { handleThemeChange(theme.name) }
+      return button
+    }
+
+    function toggleThemeMenu(source) {
+      if (window.event) window.event.stopPropagation()
+      var targetId = source === 'side' ? 'theme-dropdown-side' : 'theme-dropdown-main'
+      var target = document.getElementById(targetId)
+      var shouldOpen = !target.classList.contains('open')
+      closeThemeMenus()
+      if (shouldOpen) target.classList.add('open')
+    }
+
+    function toggleProductMenu() {
+      if (window.event) window.event.stopPropagation()
+      var target = document.getElementById('product-dropdown')
+      var shouldOpen = !target.classList.contains('open')
+      closeThemeMenus()
+      if (shouldOpen) target.classList.add('open')
+    }
+
+    function closeThemeMenus() {
+      document.querySelectorAll('.dropdown.open').forEach(function(dropdown) {
+        dropdown.classList.remove('open')
+      })
+    }
+
+    function syncThemeTriggers() {
+      var mainTrigger = document.getElementById('theme-trigger')
+      var sideTrigger = document.getElementById('theme-trigger-side')
+      if (mainTrigger) mainTrigger.textContent = currentTheme
+      if (sideTrigger) sideTrigger.textContent = currentTheme
+      document.querySelectorAll('.dropdown-menu button').forEach(function(button) {
+        button.classList.toggle('active', button.dataset.theme === currentTheme)
+      })
+    }
+
+    function openTextDialog(options) {
+      var input = document.getElementById('modal-input')
+      configureModal(options, true)
+      input.value = options.value || ''
+      input.style.display = 'block'
+      modalState = {
+        type: 'text',
+        onConfirm: function() {
+          var value = input.value.trim()
+          if (!value) {
+            showToast('请输入有效内容。', 'error')
+            input.focus()
+            return false
+          }
+          options.onConfirm(value)
+          return true
+        }
+      }
+      openModal()
+      setTimeout(function() { input.focus(); input.select() }, 30)
+    }
+
+    function openConfirmDialog(options) {
+      var input = document.getElementById('modal-input')
+      configureModal(options, false)
+      input.style.display = 'none'
+      modalState = {
+        type: 'confirm',
+        onConfirm: function() {
+          options.onConfirm()
+          return true
+        }
+      }
+      openModal()
+    }
+
+    function configureModal(options, hasInput) {
+      document.getElementById('modal-title').textContent = options.title || '确认操作'
+      document.getElementById('modal-desc').textContent = options.desc || ''
+      document.getElementById('modal-confirm').textContent = options.confirmText || '确定'
+      document.getElementById('modal-confirm').className = 'modal-btn ' + (options.danger ? 'danger' : 'primary')
+      document.getElementById('modal-body').style.display = hasInput ? 'block' : 'none'
+    }
+
+    function openModal() {
+      document.getElementById('app-modal').classList.add('open')
+    }
+
+    function closeModal(confirmed) {
+      var modal = document.getElementById('app-modal')
+      if (!modal || !modal.classList.contains('open')) return
+      if (confirmed && modalState && modalState.onConfirm) {
+        var shouldClose = modalState.onConfirm()
+        if (!shouldClose) return
+      }
+      modal.classList.remove('open')
+      modalState = null
+    }
+
+    function showToast(message, type) {
+      var toast = document.getElementById('app-toast')
+      toast.textContent = message
+      toast.className = 'toast show' + (type === 'error' ? ' error' : '')
+      clearTimeout(toastTimer)
+      toastTimer = setTimeout(function() {
+        toast.className = 'toast' + (type === 'error' ? ' error' : '')
+      }, 2600)
+    }
+
+    function formatStars(count) {
+      if (typeof count !== 'number') return '--'
+      if (count >= 1000) return (count / 1000).toFixed(count >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k'
+      return String(count)
+    }
+
+    function loadGitHubStars() {
+      var el = document.getElementById('github-stars')
+      if (!el) return
+      fetch('https://api.github.com/repos/jitOffice/jitword-sdk')
+        .then(function(res) { return res.ok ? res.json() : Promise.reject(new Error('GitHub API failed')) })
+        .then(function(repo) {
+          el.textContent = '★ ' + formatStars(repo.stargazers_count)
+          el.classList.remove('loading')
+          el.title = repo.stargazers_count + ' GitHub stars'
+        })
+        .catch(function() {
+          el.textContent = '★ --'
+          el.title = 'GitHub stars unavailable'
+        })
+    }
+
+    function cloneData(data) {
+      return JSON.parse(JSON.stringify(data))
+    }
+
+    function setStatus(message) {
+      document.getElementById('status-msg').textContent = message
+    }
+
+    function addLog(title, detail) {
+      var log = document.getElementById('activity-log')
+      var item = document.createElement('div')
+      var strong = document.createElement('strong')
+      item.className = 'log-item'
+      strong.textContent = title
+      item.appendChild(strong)
+      item.appendChild(document.createTextNode(' · ' + detail))
+      log.prepend(item)
+      while (log.children.length > 8) log.removeChild(log.lastChild)
+    }
+  </script>
+</body>
+</html>

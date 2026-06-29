@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>@jitword/mind-sdk — API Documentation</title>
+  <style>
+    :root {
+      --brand: #4f46e5;
+      --brand-light: #eef2ff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --bg: #ffffff;
+      --bg-code: #f8fafc;
+      --border: #e2e8f0;
+      --radius: 8px;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.7;
+    }
+
+    /* Layout */
+    .page { display: flex; min-height: 100vh; }
+    .sidebar {
+      position: sticky; top: 0; height: 100vh; width: 260px;
+      overflow-y: auto; border-right: 1px solid var(--border);
+      padding: 24px 16px; flex-shrink: 0;
+    }
+    .sidebar h2 { font-size: 14px; color: var(--text-muted); margin: 20px 0 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .sidebar a {
+      display: block; padding: 5px 12px; border-radius: 6px;
+      color: var(--text); text-decoration: none; font-size: 14px; margin: 2px 0;
+    }
+    .sidebar a:hover { background: var(--brand-light); color: var(--brand); }
+    .sidebar .logo { font-size: 16px; font-weight: 700; color: var(--brand); margin-bottom: 24px; }
+    .main { flex: 1; max-width: 860px; padding: 48px 56px; }
+    .top-actions {
+      position: fixed; top: 18px; right: 24px; z-index: 20;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .github-button {
+      display: inline-flex; align-items: center; gap: 8px;
+      min-height: 36px; padding: 8px 13px; border: 1px solid var(--border);
+      border-radius: 999px; background: rgba(255,255,255,0.92); color: var(--text);
+      text-decoration: none; font-size: 13px; font-weight: 650;
+      box-shadow: 0 8px 24px rgba(15,23,42,0.08); backdrop-filter: blur(10px);
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .github-button:hover {
+      transform: translateY(-1px); border-color: var(--brand);
+      box-shadow: 0 12px 28px rgba(79,70,229,0.14); color: var(--brand);
+    }
+    .github-icon { width: 17px; height: 17px; flex-shrink: 0; }
+    .github-stars {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding-left: 8px; margin-left: 2px; border-left: 1px solid var(--border);
+      color: var(--text-muted); font-weight: 700;
+    }
+    .github-stars.loading { color: var(--text-muted); font-weight: 600; }
+
+    /* Demo button */
+    .demo-button {
+      display: inline-flex; align-items: center; gap: 8px;
+      min-height: 36px; padding: 8px 16px;
+      border-radius: 999px; border: none;
+      background: linear-gradient(135deg, #7C3AED, #9333EA);
+      color: #fff; text-decoration: none; font-size: 13px; font-weight: 650;
+      box-shadow: 0 4px 16px rgba(124,58,237,0.35);
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    }
+    .demo-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(124,58,237,0.45);
+      opacity: 0.92;
+    }
+    .demo-icon { width: 15px; height: 15px; flex-shrink: 0; }
+
+    /* Typography */
+    h1 { font-size: 32px; margin-bottom: 12px; }
+    h2 { font-size: 22px; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    h3 { font-size: 17px; margin: 32px 0 12px; }
+    p, li { font-size: 15px; margin-bottom: 10px; }
+    ul { padding-left: 24px; }
+
+    /* Code */
+    code {
+      font-family: var(--font-mono); font-size: 13px;
+      background: var(--bg-code); padding: 2px 6px; border-radius: 4px;
+    }
+    pre {
+      background: #1e293b; color: #e2e8f0; padding: 20px 24px;
+      border-radius: var(--radius); overflow-x: auto; margin: 16px 0;
+      font-family: var(--font-mono); font-size: 13px; line-height: 1.6;
+    }
+    pre .comment { color: #94a3b8; }
+    pre .keyword { color: #c084fc; }
+    pre .string { color: #86efac; }
+    pre .type { color: #67e8f9; }
+    pre .fn { color: #fbbf24; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 14px; border: 1px solid var(--border); }
+    th { background: var(--bg-code); font-weight: 600; }
+
+    /* Badge */
+    .badge {
+      display: inline-block; font-size: 11px; font-weight: 600;
+      padding: 2px 8px; border-radius: 12px; margin-left: 8px;
+      vertical-align: middle;
+    }
+    .badge-sub { background: #dbeafe; color: #1d4ed8; }
+    .badge-event { background: #fef3c7; color: #92400e; }
+    .badge-type { background: #f0fdf4; color: #166534; }
+
+    /* Language switcher */
+    .lang-switch {
+      display: flex; gap: 4px; margin-bottom: 20px;
+      background: var(--bg-code); border-radius: 6px; padding: 3px;
+      border: 1px solid var(--border);
+    }
+    .lang-switch button {
+      flex: 1; padding: 5px 12px; border: none; border-radius: 4px;
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      background: transparent; color: var(--text-muted); transition: all 0.15s;
+    }
+    .lang-switch button.active {
+      background: var(--brand); color: #fff; box-shadow: 0 1px 3px rgba(79,70,229,0.3);
+    }
+    .lang-switch button:hover:not(.active) { color: var(--brand); }
+
+    /* i18n visibility — controlled by JS adding .lang-hidden class */
+    .lang-hidden { display: none !important; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main { padding: 72px 20px 24px; }
+      .top-actions { top: 14px; right: 14px; }
+      .github-button { min-height: 34px; padding: 7px 11px; font-size: 12px; }
+      .demo-button { min-height: 34px; padding: 7px 12px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+<div class="top-actions">
+  <a class="demo-button" href="https://jitword.com/mind/example" target="_blank" rel="noopener noreferrer" aria-label="在线体验思维导图">
+    <svg class="demo-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
+    </svg>
+    在线体验
+  </a>
+  <a class="github-button" href="https://github.com/jitOffice/jitword-sdk" target="_blank" rel="noopener noreferrer" aria-label="Open jitword-sdk on GitHub">
+    <svg class="github-icon" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65 0 0 1 8 3.86c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
+    </svg>
+    GitHub
+    <span class="github-stars loading" id="github-stars">★ --</span>
+  </a>
+</div>
+<div class="page">
+  <!-- Sidebar Navigation -->
+  <nav class="sidebar">
+    <div class="logo">@jitword/mind-sdk</div>
+
+    <div class="lang-switch">
+      <button id="btn-en" class="active" onclick="setLang('en')">English</button>
+      <button id="btn-zh" onclick="setLang('zh')">中文</button>
+    </div>
+
+    <h2 data-lang="en">Getting Started</h2>
+    <h2 data-lang="zh">快速上手</h2>
+    <a href="#installation" data-lang="en">Installation (CDN)</a>
+    <a href="#installation" data-lang="zh">安装（CDN）</a>
+    <a href="#quick-start" data-lang="en">Quick Start</a>
+    <a href="#quick-start" data-lang="zh">快速开始</a>
+    <a href="#options" data-lang="en">Configuration</a>
+    <a href="#options" data-lang="zh">配置选项</a>
+
+    <h2 data-lang="en">Core API</h2>
+    <h2 data-lang="zh">核心 API</h2>
+    <a href="#jitmind" data-lang="en">JitMind (Facade)</a>
+    <a href="#jitmind" data-lang="zh">JitMind（主入口）</a>
+    <a href="#data-api" data-lang="en">DataAPI (Data CRUD)</a>
+    <a href="#data-api" data-lang="zh">DataAPI（数据操作）</a>
+    <a href="#theme-api" data-lang="en">ThemeAPI (Themes)</a>
+    <a href="#theme-api" data-lang="zh">ThemeAPI（主题管理）</a>
+    <a href="#io-api" data-lang="en">IOAPI (Export/Import)</a>
+    <a href="#io-api" data-lang="zh">IOAPI（导入/导出）</a>
+    <a href="#permission-api" data-lang="en">PermissionAPI (Access)</a>
+    <a href="#permission-api" data-lang="zh">PermissionAPI（权限控制）</a>
+    <a href="#collab-api" data-lang="en">CollabAPI (Real-time)</a>
+    <a href="#collab-api" data-lang="zh">CollabAPI（实时协作）</a>
+
+    <h2 data-lang="en">Reference</h2>
+    <h2 data-lang="zh">参考</h2>
+    <a href="#events" data-lang="en">Events</a>
+    <a href="#events" data-lang="zh">事件</a>
+    <a href="#types" data-lang="en">Types</a>
+    <a href="#types" data-lang="zh">类型定义</a>
+    <a href="#themes" data-lang="en">Built-in Themes</a>
+    <a href="#themes" data-lang="zh">内置主题</a>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main">
+    <h1>@jitword/mind-sdk</h1>
+    <p data-lang="en">A self-contained mindmap editor SDK wrapping the <strong>mind</strong> engine. Provides structured APIs for data manipulation, theming, import/export, permissions, and real-time collaboration.</p>
+    <p data-lang="zh">一个 <strong>支持本地部署</strong> 的独立思维导图 SDK。提供数据操作、主题管理、导入导出、权限控制和实时协作等结构化 API。</p>
+
+    <!-- Installation -->
+    <h2 id="installation" data-lang="en">Installation (CDN)</h2>
+    <h2 id="installation-zh" data-lang="zh">安装（CDN）</h2>
+    <p data-lang="en">Load the SDK via <code>&lt;script&gt;</code> tags. The <strong>full bundle</strong> includes all dependencies (mind-elixir, jsPDF, JSZip, etc.) in a single file.</p>
+    <p data-lang="zh">通过 <code>&lt;script&gt;</code> 标签加载 SDK。<strong>完整包</strong>将所有依赖打包为单一文件。</p>
+    <pre><span class="comment">&lt;!-- 1. Process polyfill (required for bundled Node.js deps) --&gt;</span>
+<span class="keyword">&lt;script&gt;</span>
+  <span class="keyword">if</span> (<span class="keyword">typeof</span> window.process === <span class="string">'undefined'</span>) {
+    window.process = {
+      env: { NODE_ENV: <span class="string">'production'</span> },
+      versions: { node: <span class="string">''</span> },
+      nextTick: <span class="keyword">function</span>(fn) { setTimeout(fn, 0) },
+      browser: <span class="keyword">true</span>
+    };
+  }
+<span class="keyword">&lt;/script&gt;</span>
+
+<span class="comment">&lt;!-- 2. JitMind SDK (full bundle, UMD) --&gt;</span>
+<span class="keyword">&lt;script</span> src=<span class="string">"./lib/jit-mind.full.js"</span><span class="keyword">&gt;&lt;/script&gt;</span></pre>
+
+    <!-- Quick Start -->
+    <h2 id="quick-start" data-lang="en">Quick Start</h2>
+    <h2 data-lang="zh">快速开始</h2>
+    <pre><span class="comment">// Access the constructor from UMD global</span>
+<span class="comment">// 从 UMD 全局变量获取构造函数</span>
+<span class="keyword">var</span> JitMind = window.JitMind.JitMind
+
+<span class="comment">// 1. Create instance | 创建实例</span>
+<span class="keyword">var</span> mindmap = <span class="keyword">new</span> <span class="fn">JitMind</span>({
+  container: <span class="string">'#mindmap-root'</span>,
+  locale: <span class="string">'zh_CN'</span>,
+  editable: <span class="keyword">true</span>,
+  direction: <span class="string">'side'</span>,
+  onChange: <span class="keyword">function</span>(data) {
+    console.log(<span class="string">'Mindmap updated:'</span>, data)
+  }
+})
+
+<span class="comment">// 2. Initialize (renders into DOM) | 初始化（渲染到 DOM）</span>
+mindmap.<span class="fn">init</span>().then(<span class="keyword">function</span>() {
+  <span class="comment">// 3. Use sub-APIs | 使用子 API</span>
+  mindmap.data.<span class="fn">addChild</span>(<span class="string">'root'</span>, <span class="string">'New Branch'</span>)
+  mindmap.theme.<span class="fn">setTheme</span>(<span class="string">'Rainbow'</span>)
+  mindmap.io.<span class="fn">exportPng</span>({ name: <span class="string">'my-map'</span> })
+})
+
+<span class="comment">// 4. Listen to events | 监听事件</span>
+mindmap.<span class="fn">on</span>(<span class="string">'change'</span>, <span class="keyword">function</span>(data) {
+  console.log(<span class="string">'Mindmap updated:'</span>, data)
+})
+
+<span class="comment">// 5. Cleanup | 销毁</span>
+mindmap.<span class="fn">destroy</span>()</pre>
+
+    <!-- Configuration -->
+    <h2 id="options" data-lang="en">Configuration Options</h2>
+    <h2 data-lang="zh">配置选项</h2>
+
+    <table data-lang="en">
+      <thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>container</code></td><td><code>string | HTMLElement</code></td><td>—</td><td>CSS selector or DOM element to mount into <strong>(required)</strong></td></tr>
+        <tr><td><code>locale</code></td><td><code>'zh_CN' | 'en_US'</code></td><td><code>'zh_CN'</code></td><td>UI language for mind toolbar/menus</td></tr>
+        <tr><td><code>editable</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Whether users can edit nodes</td></tr>
+        <tr><td><code>direction</code></td><td><code>'side' | 'right' | 'left'</code></td><td><code>'side'</code></td><td>Layout direction of branches</td></tr>
+        <tr><td><code>data</code></td><td><code>MindmapData | null</code></td><td>Default template</td><td>Initial mindmap data to render</td></tr>
+        <tr><td><code>wsUrl</code></td><td><code>string</code></td><td>—</td><td>WebSocket URL for auto-connecting collaboration</td></tr>
+        <tr><td><code>token</code></td><td><code>string</code></td><td>—</td><td>JWT token for authenticated collaboration</td></tr>
+        <tr><td><code>userId</code></td><td><code>string</code></td><td>—</td><td>Current user identifier</td></tr>
+        <tr><td><code>username</code></td><td><code>string</code></td><td>—</td><td>Display name for collaboration presence</td></tr>
+        <tr><td><code>onChange</code></td><td><code>(data) => void</code></td><td>—</td><td>Shorthand for subscribing to the <code>change</code> event</td></tr>
+      </tbody>
+    </table>
+    <table data-lang="zh">
+      <thead><tr><th>选项</th><th>类型</th><th>默认值</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>container</code></td><td><code>string | HTMLElement</code></td><td>—</td><td>CSS 选择器或 DOM 元素 <strong>（必填）</strong></td></tr>
+        <tr><td><code>locale</code></td><td><code>'zh_CN' | 'en_US'</code></td><td><code>'zh_CN'</code></td><td>工具栏/菜单的语言</td></tr>
+        <tr><td><code>editable</code></td><td><code>boolean</code></td><td><code>true</code></td><td>是否允许编辑节点</td></tr>
+        <tr><td><code>direction</code></td><td><code>'side' | 'right' | 'left'</code></td><td><code>'side'</code></td><td>分支布局方向</td></tr>
+        <tr><td><code>data</code></td><td><code>MindmapData | null</code></td><td>默认模板</td><td>初始化时加载的思维导图数据</td></tr>
+        <tr><td><code>wsUrl</code></td><td><code>string</code></td><td>—</td><td>WebSocket URL，传入后自动连接协作</td></tr>
+        <tr><td><code>token</code></td><td><code>string</code></td><td>—</td><td>JWT 鉴权 Token</td></tr>
+        <tr><td><code>userId</code></td><td><code>string</code></td><td>—</td><td>当前用户 ID</td></tr>
+        <tr><td><code>username</code></td><td><code>string</code></td><td>—</td><td>协作中显示的用户名</td></tr>
+        <tr><td><code>onChange</code></td><td><code>(data) => void</code></td><td>—</td><td>数据变更回调（<code>change</code> 事件的快捷方式）</td></tr>
+      </tbody>
+    </table>
+
+    <!-- JitMind -->
+    <h2 id="jitmind">JitMind <span class="badge badge-sub">Facade</span> <small style="font-size:0.65em;font-weight:normal;opacity:0.6">(formerly JitMindmap)</small></h2>
+    <p data-lang="en">The main entry point. All functionality is accessed through its sub-API properties.</p>
+    <p data-lang="zh">主入口类。所有功能通过其子 API 属性访问。</p>
+
+    <table data-lang="en">
+      <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>init()</code></td><td><code>Promise&lt;void&gt;</code></td><td>Renders the mindmap. Must be called after DOM is ready.</td></tr>
+        <tr><td><code>destroy()</code></td><td><code>void</code></td><td>Tears down engine, disconnects collab, releases all resources.</td></tr>
+        <tr><td><code>clearSelection()</code></td><td><code>void</code></td><td>Deselects current node/arrow/summary.</td></tr>
+        <tr><td><code>getEngine()</code></td><td><code>MindElixirInstance</code></td><td>Escape hatch — returns the raw mind instance.</td></tr>
+        <tr><td><code>isInitialized()</code></td><td><code>boolean</code></td><td>Check if <code>init()</code> has completed.</td></tr>
+        <tr><td><code>on(event, handler)</code></td><td><code>() => void</code></td><td>Subscribe to events. Returns unsubscribe function.</td></tr>
+        <tr><td><code>once(event, handler)</code></td><td><code>() => void</code></td><td>Subscribe once.</td></tr>
+        <tr><td><code>off(event, handler)</code></td><td><code>void</code></td><td>Unsubscribe.</td></tr>
+      </tbody>
+    </table>
+    <table data-lang="zh">
+      <thead><tr><th>方法</th><th>返回值</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>init()</code></td><td><code>Promise&lt;void&gt;</code></td><td>渲染思维导图。需在 DOM 就绪后调用。</td></tr>
+        <tr><td><code>destroy()</code></td><td><code>void</code></td><td>销毁引擎、断开协作、释放所有资源。</td></tr>
+        <tr><td><code>clearSelection()</code></td><td><code>void</code></td><td>取消当前节点/箭头/摘要的选中状态。</td></tr>
+        <tr><td><code>getEngine()</code></td><td><code>MindElixirInstance</code></td><td>获取底层 mind 实例（高级用法）。</td></tr>
+        <tr><td><code>isInitialized()</code></td><td><code>boolean</code></td><td>检查 <code>init()</code> 是否已完成。</td></tr>
+        <tr><td><code>on(event, handler)</code></td><td><code>() => void</code></td><td>订阅事件。返回取消订阅函数。</td></tr>
+        <tr><td><code>once(event, handler)</code></td><td><code>() => void</code></td><td>订阅一次性事件。</td></tr>
+        <tr><td><code>off(event, handler)</code></td><td><code>void</code></td><td>取消订阅。</td></tr>
+      </tbody>
+    </table>
+
+    <!-- DataAPI -->
+    <h2 id="data-api">DataAPI <span class="badge badge-sub">mindmap.data</span></h2>
+    <p data-lang="en">CRUD operations for mindmap nodes and data.</p>
+    <p data-lang="zh">思维导图节点与数据的增删改查操作。</p>
+
+    <table data-lang="en">
+      <thead><tr><th>Method</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>getData()</code></td><td>Returns the complete <code>MindmapData</code> tree.</td></tr>
+        <tr><td><code>setData(data)</code></td><td>Replaces entire mindmap, re-renders, and centers viewport.</td></tr>
+        <tr><td><code>getNode(nodeId)</code></td><td>Find a node by ID (DFS traversal).</td></tr>
+        <tr><td><code>addChild(parentId, topic)</code></td><td>Add a child node. Returns new node ID.</td></tr>
+        <tr><td><code>addSibling(nodeId, topic)</code></td><td>Add a sibling after the given node.</td></tr>
+        <tr><td><code>removeNode(nodeId)</code></td><td>Remove a node (cannot remove root).</td></tr>
+        <tr><td><code>moveNode(nodeId, targetParentId)</code></td><td>Reparent a node under a new parent.</td></tr>
+        <tr><td><code>patchNodeStyle(patch)</code></td><td>Merge style properties on the currently selected node.</td></tr>
+        <tr><td><code>setBranchColor(color)</code></td><td>Set branch color on selected node. Pass <code>null</code> to clear.</td></tr>
+        <tr><td><code>resetNodeStyle()</code></td><td>Reset style &amp; branchColor of the selected node to defaults.</td></tr>
+      </tbody>
+    </table>
+    <table data-lang="zh">
+      <thead><tr><th>方法</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>getData()</code></td><td>返回完整的 <code>MindmapData</code> 数据树。</td></tr>
+        <tr><td><code>setData(data)</code></td><td>替换整个思维导图数据，重新渲染并居中视口。</td></tr>
+        <tr><td><code>getNode(nodeId)</code></td><td>按 ID 查找节点（深度优先遍历）。</td></tr>
+        <tr><td><code>addChild(parentId, topic)</code></td><td>添加子节点。返回新节点 ID。</td></tr>
+        <tr><td><code>addSibling(nodeId, topic)</code></td><td>在指定节点后添加兄弟节点。</td></tr>
+        <tr><td><code>removeNode(nodeId)</code></td><td>删除节点（不能删除根节点）。</td></tr>
+        <tr><td><code>moveNode(nodeId, targetParentId)</code></td><td>将节点移动到新的父节点下。</td></tr>
+        <tr><td><code>patchNodeStyle(patch)</code></td><td>合并样式属性到当前选中节点。</td></tr>
+        <tr><td><code>setBranchColor(color)</code></td><td>设置选中节点的分支颜色。传 <code>null</code> 清除。</td></tr>
+        <tr><td><code>resetNodeStyle()</code></td><td>重置选中节点的样式和分支颜色为默认值。</td></tr>
+      </tbody>
+    </table>
+
+    <h3 data-lang="en">Example: Programmatic node manipulation</h3>
+    <h3 data-lang="zh">示例：通过代码操作节点</h3>
+    <pre><span class="comment">// Add nodes | 添加节点</span>
+<span class="keyword">const</span> id = mindmap.data.<span class="fn">addChild</span>(<span class="string">'root'</span>, <span class="string">'Market Research'</span>)
+mindmap.data.<span class="fn">addChild</span>(id, <span class="string">'Competitor Analysis'</span>)
+mindmap.data.<span class="fn">addSibling</span>(id, <span class="string">'User Interviews'</span>)
+
+<span class="comment">// Style the selected node | 设置选中节点样式</span>
+mindmap.data.<span class="fn">patchNodeStyle</span>({ fontSize: <span class="string">'18px'</span>, fontWeight: <span class="string">'bold'</span> })
+mindmap.data.<span class="fn">setBranchColor</span>(<span class="string">'#ef4444'</span>)
+
+<span class="comment">// Serialize for saving | 序列化用于保存</span>
+<span class="keyword">const</span> snapshot = mindmap.data.<span class="fn">getData</span>()
+localStorage.setItem(<span class="string">'mindmap'</span>, JSON.stringify(snapshot))</pre>
+
+    <!-- ThemeAPI -->
+    <h2 id="theme-api">ThemeAPI <span class="badge badge-sub">mindmap.theme</span></h2>
+    <p data-lang="en">Manage visual themes (15 built-in + custom registration).</p>
+    <p data-lang="zh">管理视觉主题（15 个内置 + 自定义注册）。</p>
+
+    <table data-lang="en">
+      <thead><tr><th>Method</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>setTheme(name)</code></td><td>Apply a theme by name (e.g. <code>'Rainbow'</code>, <code>'Dark'</code>).</td></tr>
+        <tr><td><code>getActiveTheme()</code></td><td>Returns the current theme name.</td></tr>
+        <tr><td><code>listThemes()</code></td><td>Returns metadata for all available themes.</td></tr>
+        <tr><td><code>registerCustomTheme(theme)</code></td><td>Register a custom <code>MindmapTheme</code>.</td></tr>
+        <tr><td><code>applyThemeConfig(config)</code></td><td>Apply a raw <code>ThemeConfig</code> object directly.</td></tr>
+      </tbody>
+    </table>
+    <table data-lang="zh">
+      <thead><tr><th>方法</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>setTheme(name)</code></td><td>按名称应用主题（如 <code>'Rainbow'</code>、<code>'Dark'</code>）。</td></tr>
+        <tr><td><code>getActiveTheme()</code></td><td>返回当前主题名称。</td></tr>
+        <tr><td><code>listThemes()</code></td><td>返回所有可用主题的元数据。</td></tr>
+        <tr><td><code>registerCustomTheme(theme)</code></td><td>注册自定义 <code>MindmapTheme</code>。</td></tr>
+        <tr><td><code>applyThemeConfig(config)</code></td><td>直接应用一个 <code>ThemeConfig</code> 对象。</td></tr>
+      </tbody>
+    </table>
+
+    <h3 data-lang="en">Built-in Themes</h3>
+    <h3 data-lang="zh">内置主题</h3>
+    <p data-lang="en">Available names: <code>Light</code>, <code>Minimal</code>, <code>Classic</code>, <code>Rainbow</code>, <code>Blue</code>, <code>Green</code>, <code>Orange</code>, <code>Purple</code>, <code>Teal</code>, <code>Sakura</code>, <code>Candy</code>, <code>Dawn</code>, <code>Dark</code>, <code>Midnight</code>, <code>Forest</code></p>
+    <p data-lang="zh">可用主题名：<code>Light</code>（浅色）、<code>Minimal</code>（极简灰）、<code>Classic</code>（经典商务）、<code>Rainbow</code>（彩虹）、<code>Blue</code>（海洋蓝）、<code>Green</code>（清新绿）、<code>Orange</code>（活力橙）、<code>Purple</code>（优雅紫）、<code>Teal</code>（薄荷青）、<code>Sakura</code>（樱花粉）、<code>Candy</code>（糖果）、<code>Dawn</code>（晨曦）、<code>Dark</code>（深色）、<code>Midnight</code>（午夜蓝）、<code>Forest</code>（森林）</p>
+    <pre>mindmap.theme.<span class="fn">setTheme</span>(<span class="string">'Midnight'</span>)
+
+<span class="comment">// Register custom theme | 注册自定义主题</span>
+mindmap.theme.<span class="fn">registerCustomTheme</span>({
+  name: <span class="string">'Corporate'</span>,
+  label: <span class="string">'Corporate Blue'</span>,
+  group: <span class="string">'basic'</span>,
+  preview: [<span class="string">'#f0f9ff'</span>, <span class="string">'#1e40af'</span>, <span class="string">'#3b82f6'</span>],
+  theme: {
+    name: <span class="string">'Corporate'</span>,
+    palette: [<span class="string">'#1e40af'</span>, <span class="string">'#3b82f6'</span>, <span class="string">'#0ea5e9'</span>],
+    cssVar: { <span class="string">'--main-color'</span>: <span class="string">'#1e3a8a'</span>, <span class="string">'--bgcolor'</span>: <span class="string">'#f0f9ff'</span> }
+  }
+})</pre>
+
+    <!-- IOAPI -->
+    <h2 id="io-api">IOAPI <span class="badge badge-sub">mindmap.io</span></h2>
+    <p data-lang="en">Export and import mindmap in various formats. All export methods trigger a browser download.</p>
+    <p data-lang="zh">以多种格式导入导出思维导图。所有导出方法会触发浏览器下载。</p>
+
+    <table data-lang="en">
+      <thead><tr><th>Method</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>exportPng({ name })</code></td><td>Export as PNG image (transparent background).</td></tr>
+        <tr><td><code>exportPdf({ name })</code></td><td>Export as PDF (A4 landscape).</td></tr>
+        <tr><td><code>exportXMind({ name })</code></td><td>Export as .xmind file (ZIP archive, XMind 2020+ compatible).</td></tr>
+        <tr><td><code>exportJson({ name })</code></td><td>Export the raw JSON data.</td></tr>
+        <tr><td><code>importJson(data)</code></td><td>Load a <code>MindmapData</code> object.</td></tr>
+        <tr><td><code>importJsonFromFile()</code></td><td>Open file picker and import a .json file.</td></tr>
+      </tbody>
+    </table>
+    <table data-lang="zh">
+      <thead><tr><th>方法</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>exportPng({ name })</code></td><td>导出为 PNG 图片（透明背景）。</td></tr>
+        <tr><td><code>exportPdf({ name })</code></td><td>导出为 PDF（A4 横向）。</td></tr>
+        <tr><td><code>exportXMind({ name })</code></td><td>导出为 .xmind 文件（ZIP 归档，兼容 XMind 2020+）。</td></tr>
+        <tr><td><code>exportJson({ name })</code></td><td>导出原始 JSON 数据。</td></tr>
+        <tr><td><code>importJson(data)</code></td><td>加载一个 <code>MindmapData</code> 对象。</td></tr>
+        <tr><td><code>importJsonFromFile()</code></td><td>打开文件选择器导入 .json 文件。</td></tr>
+      </tbody>
+    </table>
+    <pre><span class="keyword">await</span> mindmap.io.<span class="fn">exportPng</span>({ name: <span class="string">'project-plan'</span> })
+<span class="keyword">await</span> mindmap.io.<span class="fn">exportXMind</span>({ name: <span class="string">'project-plan'</span> })</pre>
+
+    <!-- PermissionAPI -->
+    <h2 id="permission-api">PermissionAPI <span class="badge badge-sub">mindmap.permission</span></h2>
+    <p data-lang="en">Runtime permission toggling — switch between edit and readonly modes.</p>
+    <p data-lang="zh">运行时权限切换 — 在编辑和只读模式间切换。</p>
+
+    <table data-lang="en">
+      <thead><tr><th>Method</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>getMode()</code></td><td>Returns <code>'edit'</code> or <code>'readonly'</code>.</td></tr>
+        <tr><td><code>setMode(mode)</code></td><td>Switch mode. Emits <code>permission:change</code> event.</td></tr>
+        <tr><td><code>setReadonly()</code></td><td>Shorthand for <code>setMode('readonly')</code>.</td></tr>
+        <tr><td><code>setEditable()</code></td><td>Shorthand for <code>setMode('edit')</code>.</td></tr>
+        <tr><td><code>isEditable()</code></td><td>Returns <code>true</code> if currently in edit mode.</td></tr>
+      </tbody>
+    </table>
+    <table data-lang="zh">
+      <thead><tr><th>方法</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>getMode()</code></td><td>返回 <code>'edit'</code> 或 <code>'readonly'</code>。</td></tr>
+        <tr><td><code>setMode(mode)</code></td><td>切换模式。触发 <code>permission:change</code> 事件。</td></tr>
+        <tr><td><code>setReadonly()</code></td><td><code>setMode('readonly')</code> 的快捷方式。</td></tr>
+        <tr><td><code>setEditable()</code></td><td><code>setMode('edit')</code> 的快捷方式。</td></tr>
+        <tr><td><code>isEditable()</code></td><td>返回当前是否处于编辑模式。</td></tr>
+      </tbody>
+    </table>
+    <pre><span class="comment">// Toggle based on user role | 根据用户角色切换</span>
+<span class="keyword">if</span> (user.role === <span class="string">'viewer'</span>) {
+  mindmap.permission.<span class="fn">setReadonly</span>()
+}</pre>
+
+    <!-- CollabAPI -->
+    <h2 id="collab-api">CollabAPI <span class="badge badge-sub">mindmap.collab</span></h2>
+    <p data-lang="en">Real-time collaboration via CRDT. Uses snapshot-level sync with 300ms debounce.</p>
+    <p data-lang="zh">基于 CRDT算法 的实时协作。采用快照级同步，300ms 防抖。</p>
+
+    <table data-lang="en">
+      <thead><tr><th>Method</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>connect(opts)</code></td><td>Connect to collaboration server. Opts: <code>{ wsUrl, docId, token?, userId?, username? }</code></td></tr>
+        <tr><td><code>disconnect()</code></td><td>Disconnect and cleanup.</td></tr>
+        <tr><td><code>getStatus()</code></td><td>Returns <code>'idle' | 'connecting' | 'connected' | 'disconnected'</code>.</td></tr>
+        <tr><td><code>getUsers()</code></td><td>Returns list of online <code>CollabUser[]</code>.</td></tr>
+        <tr><td><code>getSelections()</code></td><td>Returns peer node selections <code>PeerSelection[]</code>.</td></tr>
+        <tr><td><code>pushSnapshot()</code></td><td>Manually push current state to all peers.</td></tr>
+      </tbody>
+    </table>
+    <table data-lang="zh">
+      <thead><tr><th>方法</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>connect(opts)</code></td><td>连接协作服务器。参数：<code>{ wsUrl, docId, token?, userId?, username? }</code></td></tr>
+        <tr><td><code>disconnect()</code></td><td>断开连接并清理资源。</td></tr>
+        <tr><td><code>getStatus()</code></td><td>返回 <code>'idle' | 'connecting' | 'connected' | 'disconnected'</code>。</td></tr>
+        <tr><td><code>getUsers()</code></td><td>返回在线用户列表 <code>CollabUser[]</code>。</td></tr>
+        <tr><td><code>getSelections()</code></td><td>返回其他用户的节点选中状态 <code>PeerSelection[]</code>。</td></tr>
+        <tr><td><code>pushSnapshot()</code></td><td>手动推送当前状态到所有对等端。</td></tr>
+      </tbody>
+    </table>
+    <pre><span class="comment">// Manual connection | 手动连接</span>
+<span class="keyword">await</span> mindmap.collab.<span class="fn">connect</span>({
+  wsUrl: <span class="string">'wss://collab.example.com'</span>,
+  docId: <span class="string">'doc-123'</span>,
+  token: <span class="string">'eyJhbGciOi...'</span>,
+  userId: <span class="string">'user-1'</span>,
+  username: <span class="string">'Alice'</span>,
+})
+
+mindmap.<span class="fn">on</span>(<span class="string">'collab:users'</span>, (users) => {
+  console.log(<span class="string">'Online:'</span>, users.map(u => u.name))
+})</pre>
+
+    <!-- Events -->
+    <h2 id="events" data-lang="en">Events <span class="badge badge-event">EventBus</span></h2>
+    <h2 data-lang="zh">事件 <span class="badge badge-event">EventBus</span></h2>
+
+    <table data-lang="en">
+      <thead><tr><th>Event</th><th>Payload</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>change</code></td><td><code>MindmapData</code></td><td>Fired on any data modification.</td></tr>
+        <tr><td><code>node:select</code></td><td><code>NodeData</code></td><td>A node was selected.</td></tr>
+        <tr><td><code>node:deselect</code></td><td><code>void</code></td><td>Selection was cleared.</td></tr>
+        <tr><td><code>collab:status</code></td><td><code>CollabStatus</code></td><td>Connection status changed.</td></tr>
+        <tr><td><code>collab:users</code></td><td><code>CollabUser[]</code></td><td>Online user list updated.</td></tr>
+        <tr><td><code>collab:selections</code></td><td><code>PeerSelection[]</code></td><td>Peer node selections changed.</td></tr>
+        <tr><td><code>permission:change</code></td><td><code>PermissionMode</code></td><td>Permission mode toggled.</td></tr>
+        <tr><td><code>ready</code></td><td><code>void</code></td><td>SDK fully initialized.</td></tr>
+        <tr><td><code>destroy</code></td><td><code>void</code></td><td>SDK destroyed.</td></tr>
+      </tbody>
+    </table>
+    <table data-lang="zh">
+      <thead><tr><th>事件</th><th>载荷</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>change</code></td><td><code>MindmapData</code></td><td>任何数据修改时触发。</td></tr>
+        <tr><td><code>node:select</code></td><td><code>NodeData</code></td><td>节点被选中。</td></tr>
+        <tr><td><code>node:deselect</code></td><td><code>void</code></td><td>选中被清除。</td></tr>
+        <tr><td><code>collab:status</code></td><td><code>CollabStatus</code></td><td>连接状态发生变化。</td></tr>
+        <tr><td><code>collab:users</code></td><td><code>CollabUser[]</code></td><td>在线用户列表更新。</td></tr>
+        <tr><td><code>collab:selections</code></td><td><code>PeerSelection[]</code></td><td>其他用户的选中状态变化。</td></tr>
+        <tr><td><code>permission:change</code></td><td><code>PermissionMode</code></td><td>权限模式切换。</td></tr>
+        <tr><td><code>ready</code></td><td><code>void</code></td><td>SDK 初始化完成。</td></tr>
+        <tr><td><code>destroy</code></td><td><code>void</code></td><td>SDK 已销毁。</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Types -->
+    <h2 id="types" data-lang="en">Types <span class="badge badge-type">TypeScript</span></h2>
+    <h2 data-lang="zh">类型定义 <span class="badge badge-type">TypeScript</span></h2>
+    <pre><span class="keyword">interface</span> <span class="type">MindmapData</span> {
+  nodeData: <span class="type">NodeData</span>
+  linkData?: Record&lt;string, <span class="type">LinkData</span>&gt;
+  direction?: number  <span class="comment">// 0=right, 1=side, 2=left</span>
+  theme?: <span class="type">ThemeConfig</span>
+}
+
+<span class="keyword">interface</span> <span class="type">NodeData</span> {
+  id: string
+  topic: string
+  root?: boolean
+  children?: <span class="type">NodeData</span>[]
+  style?: <span class="type">NodeStyle</span>
+  tags?: string[]
+  icons?: string[]
+  hyperLink?: string
+  memo?: string
+  expanded?: boolean
+}
+
+<span class="keyword">interface</span> <span class="type">NodeStyle</span> {
+  color?: string
+  background?: string
+  fontSize?: string
+  fontWeight?: string
+}
+
+<span class="keyword">interface</span> <span class="type">ThemeConfig</span> {
+  name: string
+  palette: string[]
+  cssVar: Record&lt;string, string&gt;
+}
+
+<span class="keyword">type</span> <span class="type">PermissionMode</span> = <span class="string">'edit'</span> | <span class="string">'readonly'</span>
+<span class="keyword">type</span> <span class="type">CollabStatus</span> = <span class="string">'idle'</span> | <span class="string">'connecting'</span> | <span class="string">'connected'</span> | <span class="string">'disconnected'</span></pre>
+
+    <!-- Themes Reference -->
+    <h2 id="themes" data-lang="en">Built-in Themes Reference</h2>
+    <h2 data-lang="zh">内置主题一览</h2>
+    <p data-lang="en">Access via <code>window.JitMind.builtinThemes</code> and <code>window.JitMind.themeGroups</code></p>
+    <p data-lang="zh">通过 <code>window.JitMind.builtinThemes</code> 和 <code>window.JitMind.themeGroups</code> 获取</p>
+
+    <table data-lang="en">
+      <thead><tr><th>Group</th><th>Themes</th></tr></thead>
+      <tbody>
+        <tr><td>Basic</td><td>Light · Minimal · Classic</td></tr>
+        <tr><td>Vibrant</td><td>Rainbow · Blue · Green · Orange · Purple · Teal</td></tr>
+        <tr><td>Pastel</td><td>Sakura · Candy · Dawn</td></tr>
+        <tr><td>Dark</td><td>Dark · Midnight · Forest</td></tr>
+      </tbody>
+    </table>
+    <table data-lang="zh">
+      <thead><tr><th>分组</th><th>主题</th></tr></thead>
+      <tbody>
+        <tr><td>基础</td><td>Light（浅色）· Minimal（极简灰）· Classic（经典商务）</td></tr>
+        <tr><td>彩色</td><td>Rainbow（彩虹）· Blue（海洋蓝）· Green（清新绿）· Orange（活力橙）· Purple（优雅紫）· Teal（薄荷青）</td></tr>
+        <tr><td>柔和</td><td>Sakura（樱花粉）· Candy（糖果）· Dawn（晨曦）</td></tr>
+        <tr><td>深色</td><td>Dark（深色）· Midnight（午夜蓝）· Forest（森林）</td></tr>
+      </tbody>
+    </table>
+
+    <h3 data-lang="en">Helper: Default Data</h3>
+    <h3 data-lang="zh">工具函数：默认数据</h3>
+    <pre><span class="keyword">var</span> createDefaultMindmapData = window.JitMind.createDefaultMindmapData
+
+<span class="comment">// Creates a default tree with root + 2 branches</span>
+<span class="comment">// 创建一棵默认树：根节点 + 2 个分支</span>
+<span class="keyword">var</span> data = <span class="fn">createDefaultMindmapData</span>(<span class="string">'zh_CN'</span>)
+<span class="comment">// → { nodeData: { id: 'root', topic: '中心主题', children: [...] }, linkData: {} }</span></pre>
+
+    <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 13px;">
+      <p>@jitword/mind-sdk v0.1.0 — Built on <a href="https://github.com/jitOffice/jitword-sdk" style="color: var(--brand);">mind</a></p>
+    </div>
+  </main>
+</div>
+
+<script>
+function setLang(lang) {
+  document.documentElement.lang = lang
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en')
+  document.getElementById('btn-zh').classList.toggle('active', lang === 'zh')
+  localStorage.setItem('mindmap-sdk-docs-lang', lang)
+  // Toggle visibility: hide elements that don't match current lang
+  document.querySelectorAll('[data-lang]').forEach(function(el) {
+    if (el.getAttribute('data-lang') === lang) {
+      el.classList.remove('lang-hidden')
+    } else {
+      el.classList.add('lang-hidden')
+    }
+  })
+}
+
+function formatStars(count) {
+  if (typeof count !== 'number') return '--'
+  if (count >= 1000) return (count / 1000).toFixed(count >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k'
+  return String(count)
+}
+
+function loadGitHubStars() {
+  var el = document.getElementById('github-stars')
+  if (!el) return
+  fetch('https://api.github.com/repos/jitOffice/jitword-sdk')
+    .then(function(res) { return res.ok ? res.json() : Promise.reject(new Error('GitHub API failed')) })
+    .then(function(repo) {
+      el.textContent = '★ ' + formatStars(repo.stargazers_count)
+      el.classList.remove('loading')
+      el.title = repo.stargazers_count + ' GitHub stars'
+    })
+    .catch(function() {
+      el.textContent = '★ --'
+      el.title = 'GitHub stars unavailable'
+    })
+}
+
+// Auto-detect: check localStorage first, then browser language
+;(function() {
+  loadGitHubStars()
+  var saved = localStorage.getItem('mindmap-sdk-docs-lang')
+  if (saved) { setLang(saved); return }
+  var browserLang = navigator.language || navigator.userLanguage || ''
+  setLang(browserLang.startsWith('zh') ? 'zh' : 'en')
+})()
+</script>
+</body>
+</html>
