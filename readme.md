@@ -1,6 +1,6 @@
 ![](./demo.png)
 
-# JitWord Web SDK 使用文档（3.0版本已发布， 大家可线上体验共建版， sdk试用版为1.0版本，仅用于本地集成测试）
+# JitWord Web SDK 使用文档
 
 JitWord SDK 提供了一个简单的方式将强大的协同文档编辑器集成到您的 Web 应用中。支持 Vue、React、Angular 以及原生 HTML/JS 项目。
 
@@ -10,6 +10,8 @@ JitWord SDK 提供了一个简单的方式将强大的协同文档编辑器集�
 
 
 ⚠️ 注：本项目**仅供个人或者非商业用途**使用，受 **GPL3.0** 协议控制，如需商用，请[**联系授权**](https://jitword.com/on-premise.html)。
+
+
 
 ## 1. 目标
 
