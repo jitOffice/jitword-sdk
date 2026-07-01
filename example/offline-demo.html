@@ -28,70 +28,338 @@
   <style>
     /* API Demo Panel */
     .api-demo-panel {
-      background: linear-gradient(135deg, #0c4ccd 0%, #0569af 100%);
-      color: white;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      color: #0f172a;
+      border-bottom: 1px solid #e2e8f0;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      z-index: 1000;
+      flex-shrink: 0;
+    }
+    .panel-topbar {
+      min-height: 58px;
       padding: 10px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-      z-index: 1000;
-      flex-shrink: 0;
+      gap: 18px;
+      border-bottom: 1px solid #edf2f7;
     }
     .panel-left {
       display: flex;
       align-items: center;
-      gap: 10px;
-      flex-shrink: 0;
+      gap: 12px;
+      min-width: 260px;
     }
     .panel-icon {
-      font-size: 20px;
-      font-weight: 700;
-      opacity: 0.9;
+      width: 34px;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
     }
     .panel-text strong {
-      font-weight: 600;
-      font-size: 14px;
+      display: block;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.01em;
+      color: #111827;
     }
     .panel-text small {
       display: block;
-      opacity: 0.85;
-      font-size: 11px;
-      margin-top: 1px;
+      color: #64748b;
+      font-size: 12px;
+      margin-top: 2px;
     }
-    .panel-right {
+    .contact-author-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #ecfdf5;
+      border: 1px solid #bbf7d0;
+      color: #047857;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .contact-author-btn::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #10b981;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
+    }
+    .contact-author-btn:hover {
+      background: #d1fae5;
+      border-color: #86efac;
+      color: #065f46;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(16, 185, 129, 0.12);
+    }
+    .contact-modal-mask {
+      position: fixed;
+      inset: 0;
+      z-index: 9200;
       display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(15, 23, 42, 0.38);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+    .contact-modal-mask.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .contact-modal {
+      width: min(360px, 100%);
+      padding: 22px;
+      border-radius: 18px;
+      background: #ffffff;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+      transform: translateY(10px) scale(0.98);
+      transition: transform 0.22s ease;
+    }
+    .contact-modal-mask.active .contact-modal {
+      transform: translateY(0) scale(1);
+    }
+    .contact-modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .contact-modal-header strong {
+      display: block;
+      color: #0f172a;
+      font-size: 17px;
+      margin-bottom: 4px;
+    }
+    .contact-modal-header small {
+      color: #64748b;
+      font-size: 12px;
+    }
+    .contact-qrcode {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      display: block;
+    }
+    .contact-modal-tip {
+      margin-top: 12px;
+      color: #475569;
+      font-size: 13px;
+      text-align: center;
+    }
+    .panel-actions {
+      display: flex;
+      align-items: center;
       justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+    .feature-drawer-mask {
+      position: fixed;
+      inset: 0;
+      z-index: 9000;
+      background: rgba(15, 23, 42, 0.28);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+    .feature-drawer-mask.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .feature-drawer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: min(420px, calc(100vw - 28px));
+      height: 100%;
+      background: #ffffff;
+      box-shadow: -18px 0 40px rgba(15, 23, 42, 0.18);
+      transform: translateX(100%);
+      transition: transform 0.24s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .feature-drawer-mask.active .feature-drawer {
+      transform: translateX(0);
+    }
+    .drawer-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 20px 22px 14px;
+      border-bottom: 1px solid #eef2f7;
+    }
+    .drawer-header strong {
+      display: block;
+      color: #0f172a;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+    .drawer-header small {
+      color: #64748b;
+      font-size: 12px;
+    }
+    .drawer-close {
+      width: 30px;
+      height: 30px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      transition: all 0.18s ease;
+    }
+    .drawer-close:hover {
+      background: #f8fafc;
+      color: #0f172a;
+      border-color: #cbd5e1;
+    }
+    .panel-toolbar {
+      flex: 1;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+      overflow-y: auto;
+      background: #f8fafc;
+    }
+    .toolbar-group {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    .toolbar-label {
+      grid-column: 1 / -1;
+      padding: 0 2px 4px;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
     }
     .api-btn {
-      background: rgba(255,255,255,0.18);
-      border: 1px solid rgba(255,255,255,0.3);
-      color: white;
-      padding: 5px 11px;
-      border-radius: 6px;
+      min-height: 30px;
+      background: #ffffff;
+      border: 1px solid #dbe3ee;
+      color: #334155;
+      padding: 6px 11px;
+      border-radius: 8px;
       cursor: pointer;
       font-size: 12px;
-      transition: all 0.2s;
+      font-weight: 600;
+      transition: all 0.18s ease;
       white-space: nowrap;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      line-height: 1;
     }
     .api-btn:hover {
-      background: rgba(255,255,255,0.3);
-      border-color: rgba(255,255,255,0.45);
+      background: #eff6ff;
+      border-color: #93c5fd;
+      color: #1d4ed8;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(37, 99, 235, 0.12);
     }
     .api-btn:active {
-      transform: scale(0.95);
+      transform: scale(0.98);
+    }
+    .api-btn.primary {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #ffffff;
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+    }
+    .api-btn.primary:hover {
+      background: #1d4ed8;
+      border-color: #1d4ed8;
+      color: #ffffff;
+    }
+    .drawer-toggle {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+      color: #0f172a;
+    }
+    .drawer-toggle:hover {
+      background: #e0f2fe;
+      border-color: #38bdf8;
+      color: #0369a1;
+    }
+    .github-link {
+      background: #0f172a;
+      border-color: #0f172a;
+      color: #ffffff;
+    }
+    .github-link:hover {
+      background: #020617;
+      border-color: #020617;
+      color: #ffffff;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+    }
+    .github-stars {
+      padding-left: 6px;
+      border-left: 1px solid rgba(255, 255, 255, 0.24);
+      color: #fde68a;
+      font-variant-numeric: tabular-nums;
+    }
+    .business-link {
+      background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+      border-color: transparent;
+      color: #ffffff;
+      box-shadow: 0 8px 18px rgba(239, 68, 68, 0.2);
+    }
+    .business-link:hover {
+      background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%);
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 10px 22px rgba(239, 68, 68, 0.28);
+    }
+    @media (max-width: 1024px) {
+      .panel-topbar {
+        overflow-x: auto;
+      }
+      .panel-actions {
+        flex-shrink: 0;
+      }
     }
     @media (max-width: 768px) {
-      .api-demo-panel {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
+      .panel-topbar {
         padding: 10px 14px;
       }
-      .panel-right {
-        width: 100%;
+      .panel-left {
+        min-width: 220px;
+      }
+      .toolbar-group {
+        grid-template-columns: 1fr;
       }
     }
     * { 
@@ -315,37 +583,77 @@
   <div id="app">
     <!-- API Demo Panel -->
     <div class="api-demo-panel">
-      <div class="panel-left">
-        <div class="panel-icon">[SDK]</div>
-        <div class="panel-text">
-          <strong>JitWord 在线演示</strong>
-          <small>协同模式：第一阶段元素 API + 实时协作体验</small>
+      <div class="panel-topbar">
+        <div class="panel-left">
+          <div class="panel-icon">JW</div>
+          <div class="panel-text">
+            <strong>JitWord 在线文档编辑器</strong>
+            <small>协同文档 SDK · 离线集成演示 · 完整 API 操作入口</small>
+          </div>
+        </div>
+        <div class="panel-actions">
+          <button class="contact-author-btn" type="button" onclick="openContactModal()" aria-controls="contact-modal-mask" aria-expanded="false">联系作者</button>
+          <button class="api-btn drawer-toggle" type="button" onclick="openFeatureDrawer()" aria-controls="feature-drawer-mask" aria-expanded="false">功能面板</button>
+          <a class="api-btn github-link" href="https://github.com/MrXujiang/jitword-sdk" target="_blank" rel="noopener noreferrer" aria-label="在 GitHub 查看 JitWord SDK">
+            GitHub
+            <span class="github-stars" id="github-star-count">Star</span>
+          </a>
+          <a class="api-btn business-link" href="https://jitword.com" target="_blank" rel="noopener noreferrer">体验商业版</a>
         </div>
       </div>
-      <div class="panel-right">
-        <button class="api-btn" onclick="apiSetContent()">设置内容</button>
-        <button class="api-btn" onclick="apiInsertParagraph()">插入段落</button>
-        <button class="api-btn" onclick="apiInsertImage()">插入图片</button>
-        <button class="api-btn" onclick="apiInsertColumns()">插入分栏</button>
-        <button class="api-btn" onclick="apiInsertTable()">插入表格</button>
-        <button class="api-btn" onclick="apiInsertChart()">插入图表</button>
-        <button class="api-btn" onclick="apiInsertMindmap()">插入思维导图</button>
-        <button class="api-btn" onclick="apiInsertMermaid()">插入 Mermaid</button>
-        <button class="api-btn" onclick="apiGetLastElement()">查询最近元素</button>
-        <button class="api-btn" onclick="apiUpdateLastElement()">更新最近元素</button>
-        <button class="api-btn" onclick="apiDeleteLastElement()">删除最近元素</button>
-        <button class="api-btn" onclick="apiChooseImportFile()">导入文件</button>
-        <button class="api-btn" onclick="apiExportMarkdown()">导出 Markdown</button>
-        <button class="api-btn" onclick="apiExportPdfBlob()">导出 PDF Blob</button>
-        <button class="api-btn" onclick="apiGetContent()">获取内容</button>
-      </div>
     </div>
-
-    <div class="demo-header">
-      <h1>🚀 PxEditor 独立构建示例</h1>
-      <p>
-        这是一个零依赖的演示页面：适合快速体验、嵌入集成与免配置使用。
-      </p>
+    <div class="feature-drawer-mask" id="feature-drawer-mask" onclick="handleFeatureDrawerMaskClick(event)">
+      <aside class="feature-drawer" aria-label="JitWord SDK 功能演示抽屉">
+        <div class="drawer-header">
+          <div>
+            <strong>SDK 功能面板</strong>
+            <small>完整保留内容、插入、元素与文件相关 API 操作</small>
+          </div>
+          <button class="drawer-close" type="button" onclick="closeFeatureDrawer()" aria-label="关闭功能面板">×</button>
+        </div>
+        <div class="panel-toolbar" aria-label="JitWord SDK 功能演示工具栏">
+          <div class="toolbar-group">
+            <span class="toolbar-label">内容</span>
+            <button class="api-btn primary" onclick="apiSetContent()">设置内容</button>
+            <button class="api-btn" onclick="apiGetContent()">获取内容</button>
+          </div>
+          <div class="toolbar-group">
+            <span class="toolbar-label">插入</span>
+            <button class="api-btn" onclick="apiInsertParagraph()">段落</button>
+            <button class="api-btn" onclick="apiInsertImage()">图片</button>
+            <button class="api-btn" onclick="apiInsertColumns()">分栏</button>
+            <button class="api-btn" onclick="apiInsertTable()">表格</button>
+            <button class="api-btn" onclick="apiInsertChart()">图表</button>
+            <button class="api-btn" onclick="apiInsertMindmap()">思维导图</button>
+            <button class="api-btn" onclick="apiInsertMermaid()">Mermaid</button>
+          </div>
+          <div class="toolbar-group">
+            <span class="toolbar-label">元素</span>
+            <button class="api-btn" onclick="apiGetLastElement()">查询最近元素</button>
+            <button class="api-btn" onclick="apiUpdateLastElement()">更新最近元素</button>
+            <button class="api-btn" onclick="apiDeleteLastElement()">删除最近元素</button>
+          </div>
+          <div class="toolbar-group">
+            <span class="toolbar-label">文件</span>
+            <button class="api-btn" onclick="apiChooseImportFile()">导入文件</button>
+            <button class="api-btn" onclick="apiExportMarkdown()">导出 Markdown</button>
+            <button class="api-btn" onclick="apiExportPdfBlob()">导出 PDF Blob</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+    <div class="contact-modal-mask" id="contact-modal-mask" onclick="handleContactModalMaskClick(event)">
+      <div class="contact-modal" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title">
+        <div class="contact-modal-header">
+          <div>
+            <strong id="contact-modal-title">联系作者</strong>
+            <small>扫码添加微信，咨询集成与商业授权</small>
+          </div>
+          <button class="drawer-close" type="button" onclick="closeContactModal()" aria-label="关闭联系作者弹窗">×</button>
+        </div>
+        <img class="contact-qrcode" src="https://next.jitword.com/uploads/WechatIMG246_19d428a664c.jpg" alt="联系作者微信二维码" loading="lazy">
+        <div class="contact-modal-tip">打开微信扫一扫，联系 JitWord 作者</div>
+      </div>
     </div>
     
     <div class="editor-wrapper" id="editor-container"></div>
@@ -378,6 +686,75 @@
         url.searchParams.delete(name);
       }
       window.history.pushState({}, '', url.toString());
+    }
+
+    function formatGitHubStars(count) {
+      if (typeof count !== 'number' || Number.isNaN(count)) return 'Star';
+      if (count >= 1000) return (count / 1000).toFixed(count >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k';
+      return String(count);
+    }
+
+    function setFeatureDrawerState(open) {
+      const mask = document.getElementById('feature-drawer-mask');
+      const toggle = document.querySelector('.drawer-toggle');
+      if (!mask) return;
+      mask.classList.toggle('active', open);
+      if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    function openFeatureDrawer() {
+      setFeatureDrawerState(true);
+    }
+
+    function closeFeatureDrawer() {
+      setFeatureDrawerState(false);
+    }
+
+    function handleFeatureDrawerMaskClick(event) {
+      if (event.target && event.target.id === 'feature-drawer-mask') closeFeatureDrawer();
+    }
+
+    function setContactModalState(open) {
+      const mask = document.getElementById('contact-modal-mask');
+      const toggle = document.querySelector('.contact-author-btn');
+      if (!mask) return;
+      mask.classList.toggle('active', open);
+      if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    function openContactModal() {
+      setContactModalState(true);
+    }
+
+    function closeContactModal() {
+      setContactModalState(false);
+    }
+
+    function handleContactModalMaskClick(event) {
+      if (event.target && event.target.id === 'contact-modal-mask') closeContactModal();
+    }
+
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeFeatureDrawer();
+        closeContactModal();
+      }
+    });
+
+    async function loadGitHubStars() {
+      const countEl = document.getElementById('github-star-count');
+      if (!countEl) return;
+      try {
+        const res = await fetch('https://api.github.com/repos/MrXujiang/jitword-sdk', {
+          headers: { Accept: 'application/vnd.github+json' }
+        });
+        if (!res.ok) throw new Error('GitHub API error');
+        const data = await res.json();
+        countEl.textContent = '★ ' + formatGitHubStars(data.stargazers_count);
+      } catch (error) {
+        countEl.textContent = '★ Star';
+        console.warn('GitHub stars load failed:', error);
+      }
     }
     
     async function startApp() {
@@ -605,37 +982,6 @@
       });
       
       observer.observe(container, { childList: true, subtree: true });
-
-      var header=document.querySelector('.demo-header h1');
-      var para=document.querySelector('.demo-header p');
-      function typewrite(el, speed){
-        return new Promise(function(resolve){
-          if(!el){ resolve(); return }
-          var full=el.textContent||'';
-          el.textContent='';
-          var i=0;
-          (function step(){
-            el.textContent+=full.charAt(i);
-            i++;
-            if(i<full.length){
-              var ch=full.charAt(i-1);
-              var delay=ch==='，'||ch==='。'||ch==='！'||ch==='；'||ch===','||ch==='.'? speed*2 : speed;
-              setTimeout(step, delay);
-            } else { resolve() }
-          })();
-        })
-      }
-      typewrite(header,50).then(function(){
-        return typewrite(para,35)
-      }).then(function(){
-        setTimeout(function(){
-          var el=document.querySelector('.demo-header');
-          if(el){
-            el.classList.add('fade-out');
-            setTimeout(function(){ if(el && el.parentNode){ el.parentNode.removeChild(el) } },300);
-          }
-        },3000)
-      })
     }
 
     // Global listener example: consume px-editor-change events
@@ -1090,7 +1436,10 @@ ${contentStr.substring(0, 500)}${contentStr.length > 500 ? '...' : ''}`;
     });
 
     // Wait for window load to ensure all scripts are executed
-    window.addEventListener('load', startApp);
+    window.addEventListener('load', function() {
+      loadGitHubStars();
+      startApp();
+    });
   </script>
 </body>
 </html>
